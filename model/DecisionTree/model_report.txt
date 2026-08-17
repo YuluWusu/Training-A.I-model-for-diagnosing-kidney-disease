@@ -1,0 +1,113 @@
+Epoch [1/100] - Loss: 0.0210
+Epoch [2/100] - Loss: 0.0158
+Epoch [3/100] - Loss: 0.0140
+Epoch [4/100] - Loss: 0.0131
+Epoch [5/100] - Loss: 0.0126
+Epoch [6/100] - Loss: 0.0123
+Epoch [7/100] - Loss: 0.0120
+Epoch [8/100] - Loss: 0.0118
+Epoch [9/100] - Loss: 0.0117
+Epoch [10/100] - Loss: 0.0116
+Epoch [11/100] - Loss: 0.0115
+Epoch [12/100] - Loss: 0.0114
+Epoch [13/100] - Loss: 0.0113
+Epoch [14/100] - Loss: 0.0113
+Epoch [15/100] - Loss: 0.0112
+Epoch [16/100] - Loss: 0.0112
+Epoch [17/100] - Loss: 0.0111
+Epoch [18/100] - Loss: 0.0111
+Epoch [19/100] - Loss: 0.0111
+Epoch [20/100] - Loss: 0.0110
+Epoch [21/100] - Loss: 0.0110
+Epoch [22/100] - Loss: 0.0110
+Epoch [23/100] - Loss: 0.0110
+Epoch [24/100] - Loss: 0.0110
+Epoch [25/100] - Loss: 0.0109
+Epoch [26/100] - Loss: 0.0109
+Epoch [27/100] - Loss: 0.0109
+Epoch [28/100] - Loss: 0.0109
+Epoch [29/100] - Loss: 0.0109
+Epoch [30/100] - Loss: 0.0109
+Epoch [31/100] - Loss: 0.0109
+Epoch [32/100] - Loss: 0.0108
+Epoch [33/100] - Loss: 0.0108
+Epoch [34/100] - Loss: 0.0108
+Epoch [35/100] - Loss: 0.0108
+Epoch [36/100] - Loss: 0.0108
+Epoch [37/100] - Loss: 0.0108
+Epoch [38/100] - Loss: 0.0108
+Epoch [39/100] - Loss: 0.0108
+Epoch [40/100] - Loss: 0.0108
+Epoch [41/100] - Loss: 0.0108
+Epoch [42/100] - Loss: 0.0108
+Epoch [43/100] - Loss: 0.0108
+Epoch [44/100] - Loss: 0.0108
+Epoch [45/100] - Loss: 0.0107
+Epoch [46/100] - Loss: 0.0107
+Epoch [47/100] - Loss: 0.0107
+Epoch [48/100] - Loss: 0.0107
+Epoch [49/100] - Loss: 0.0107
+Epoch [50/100] - Loss: 0.0107
+Epoch [51/100] - Loss: 0.0107
+Epoch [52/100] - Loss: 0.0107
+Epoch [53/100] - Loss: 0.0107
+Epoch [54/100] - Loss: 0.0107
+Epoch [55/100] - Loss: 0.0107
+Epoch [56/100] - Loss: 0.0107
+Epoch [57/100] - Loss: 0.0107
+Epoch [58/100] - Loss: 0.0107
+Epoch [59/100] - Loss: 0.0107
+Epoch [60/100] - Loss: 0.0107
+Epoch [61/100] - Loss: 0.0107
+Epoch [62/100] - Loss: 0.0107
+Epoch [63/100] - Loss: 0.0107
+Epoch [64/100] - Loss: 0.0107
+Epoch [65/100] - Loss: 0.0107
+Epoch [66/100] - Loss: 0.0107
+Epoch [67/100] - Loss: 0.0107
+Epoch [68/100] - Loss: 0.0107
+Epoch [69/100] - Loss: 0.0107
+Epoch [70/100] - Loss: 0.0107
+Epoch [71/100] - Loss: 0.0107
+Epoch [72/100] - Loss: 0.0107
+Epoch [73/100] - Loss: 0.0107
+Epoch [74/100] - Loss: 0.0107
+Epoch [75/100] - Loss: 0.0107
+Epoch [76/100] - Loss: 0.0107
+Epoch [77/100] - Loss: 0.0107
+Epoch [78/100] - Loss: 0.0107
+Epoch [79/100] - Loss: 0.0106
+Epoch [80/100] - Loss: 0.0106
+Epoch [81/100] - Loss: 0.0106
+Epoch [82/100] - Loss: 0.0106
+Epoch [83/100] - Loss: 0.0106
+Epoch [84/100] - Loss: 0.0106
+Epoch [85/100] - Loss: 0.0106
+Epoch [86/100] - Loss: 0.0106
+Epoch [87/100] - Loss: 0.0106
+Epoch [88/100] - Loss: 0.0106
+Epoch [89/100] - Loss: 0.0106
+Epoch [90/100] - Loss: 0.0106
+Epoch [91/100] - Loss: 0.0106
+Epoch [92/100] - Loss: 0.0106
+Epoch [93/100] - Loss: 0.0106
+Epoch [94/100] - Loss: 0.0106
+Epoch [95/100] - Loss: 0.0106
+Epoch [96/100] - Loss: 0.0106
+Epoch [97/100] - Loss: 0.0106
+Epoch [98/100] - Loss: 0.0106
+Epoch [99/100] - Loss: 0.0106
+Epoch [100/100] - Loss: 0.0106
+
+BÁO CÁO KẾT QUẢ:
+Precision: 1.0
+Recall   : 1.0
+F1-score : 1.0
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00        52
+           1       1.00      1.00      1.00        28
+
+    accuracy                           1.00        80
+   macro avg       1.00      1.00      1.00        80
+weighted avg       1.00      1.00      1.00        80
