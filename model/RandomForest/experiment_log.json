@@ -1,0 +1,24 @@
+{
+    "meta": {
+        "timestamp": "2026-08-20T15:02:55.172119",
+        "model_name": "RandomForest",
+        "category": "non-iterative",
+        "dataset_version": "Kaggle Kidney v1",
+        "random_state": 42,
+        "test_size": 0.2
+    },
+    "params": {
+        "n_estimators": 100,
+        "criterion": "gini",
+        "random_state": 42
+    },
+    "mechanics": {
+        "category": "non-iterative",
+        "n_features_": 24,
+        "estimators_count": 100
+    },
+    "metrics": {
+        "accuracy": 1.0,
+        "f1_weighted": 1.0
+    }
+}

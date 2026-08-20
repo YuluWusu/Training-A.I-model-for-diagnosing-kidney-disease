@@ -1,0 +1,24 @@
+{
+    "meta": {
+        "timestamp": "2026-08-20T15:01:53.250671",
+        "model_name": "KNN",
+        "category": "non-iterative",
+        "dataset_version": "Kaggle Kidney v1",
+        "random_state": 42,
+        "test_size": 0.2
+    },
+    "params": {
+        "n_neighbors": 5,
+        "metric": "minkowski",
+        "p": 2
+    },
+    "mechanics": {
+        "category": "non-iterative",
+        "n_samples_fit_": 320,
+        "effective_metric_": "euclidean"
+    },
+    "metrics": {
+        "accuracy": 0.6875,
+        "f1_weighted": 0.6933553771059676
+    }
+}
