@@ -1,24 +1,16 @@
 {
     "meta": {
-        "timestamp": "2026-08-20T22:33:59.034588",
+        "timestamp": "2026-09-04T00:57:57.701525",
         "model_name": "LogisticRegression",
         "category": "non-iterative",
-        "dataset_version": "Kaggle Kidney v1",
-        "random_state": 42,
-        "test_size": 0.2
+        "random_state": 42
     },
     "params": {
         "solver": "liblinear",
-        "C": 1.0,
-        "max_iter": 100
-    },
-    "mechanics": {
-        "category": "non-iterative",
-        "n_iter_": 27,
-        "train_loss": 0.06119876016299926
+        "C": 1.0
     },
     "metrics": {
-        "accuracy": 0.9375,
-        "f1_weighted": 0.937279744923645
+        "accuracy": 0.9625,
+        "f1_weighted": 0.9623678469541869
     }
 }

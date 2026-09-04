@@ -1,28 +1,16 @@
 {
     "meta": {
-        "timestamp": "2026-08-20T22:35:20.895628",
+        "timestamp": "2026-09-04T00:58:08.533711",
         "model_name": "SVM",
         "category": "non-iterative",
-        "dataset_version": "Kaggle Kidney v1",
-        "random_state": 42,
-        "test_size": 0.2
+        "random_state": 42
     },
     "params": {
         "kernel": "linear",
-        "C": 1.0,
-        "probability": true
-    },
-    "mechanics": {
-        "category": "non-iterative",
-        "n_support_": [
-            12,
-            11
-        ],
-        "dual_coef_": "stored_in_weights",
-        "convergence": "QP_solver_finished"
+        "C": 1.0
     },
     "metrics": {
         "accuracy": 0.975,
-        "f1_weighted": 0.9751481237656353
+        "f1_weighted": 0.975
     }
 }

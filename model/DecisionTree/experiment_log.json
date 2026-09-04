@@ -1,52 +1,17 @@
 {
     "meta": {
-        "timestamp": "2026-08-20T22:34:12.758298",
+        "timestamp": "2026-09-04T00:57:58.858403",
         "model_name": "DecisionTree",
         "category": "non-iterative",
-        "dataset_version": "Kaggle Kidney v1",
-        "random_state": 42,
-        "test_size": 0.2
+        "random_state": 42
     },
     "params": {
         "criterion": "entropy",
         "max_depth": 5,
         "random_state": 42
     },
-    "mechanics": {
-        "category": "non-iterative",
-        "tree_depth": 5,
-        "n_leaves": 8,
-        "feature_importances": [
-            0.0,
-            0.0,
-            0.24629700108438138,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.02890028024614235,
-            0.0,
-            0.0106251207780329,
-            0.666208586946578,
-            0.0,
-            0.0,
-            0.0,
-            0.0479690109448653,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0
-        ]
-    },
     "metrics": {
-        "accuracy": 0.9875,
-        "precision_weighted": 0.9877450980392156,
-        "recall_weighted": 0.9875,
-        "f1_weighted": 0.987455948984729
+        "accuracy": 1.0,
+        "f1_weighted": 1.0
     }
 }
