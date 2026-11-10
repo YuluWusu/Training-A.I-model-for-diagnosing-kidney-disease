@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "folds_checked": 5,
+  "checks": [
+    "disjoint split",
+    "finite matrices",
+    "38 unique features",
+    "train-only median",
+    "joblib reload",
+    "CSV round trip",
+    "column order",
+    "fold-only median"
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "author": "Huỳnh Công Tạo",
+  "student_id": "2001240431",
+  "source_file": "kidney_disease.csv",
+  "sha256": "835c57ec100db2d3751165fae615fec425caf444cca23bab6a853d4c08bf5556",
+  "input_features": [
+    "age",
+    "bp",
+    "sg",
+    "al",
+    "su",
+    "rbc",
+    "pc",
+    "pcc",
+    "ba",
+    "bgr",
+    "bu",
+    "sc",
+    "sod",
+    "pot",
+    "hemo",
+    "pcv",
+    "wc",
+    "rc",
+    "htn",
+    "dm",
+    "cad",
+    "appet",
+    "pe",
+    "ane"
+  ],
+  "numeric_features": [
+    "age",
+    "bp",
+    "bgr",
+    "bu",
+    "sc",
+    "sod",
+    "pot",
+    "hemo",
+    "pcv",
+    "wc",
+    "rc"
+  ],
+  "binary_levels": {
+    "rbc": [
+      "normal",
+      "abnormal"
+    ],
+    "pc": [
+      "normal",
+      "abnormal"
+    ],
+    "pcc": [
+      "notpresent",
+      "present"
+    ],
+    "ba": [
+      "notpresent",
+      "present"
+    ],
+    "htn": [
+      "no",
+      "yes"
+    ],
+    "dm": [
+      "no",
+      "yes"
+    ],
+    "cad": [
+      "no",
+      "yes"
+    ],
+    "appet": [
+      "good",
+      "poor"
+    ],
+    "pe": [
+      "no",
+      "yes"
+    ],
+    "ane": [
+      "no",
+      "yes"
+    ]
+  },
+  "multi_levels": {
+    "sg": [
+      "1.005",
+      "1.01",
+      "1.015",
+      "1.02",
+      "1.025"
+    ],
+    "al": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ],
+    "su": [
+      "0",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5"
+    ]
+  },
+  "output_features": [
+    "num__age",
+    "num__bp",
+    "num__bgr",
+    "num__bu",
+    "num__sc",
+    "num__sod",
+    "num__pot",
+    "num__hemo",
+    "num__pcv",
+    "num__wc",
+    "num__rc",
+    "binary__rbc_abnormal",
+    "binary__pc_abnormal",
+    "binary__pcc_present",
+    "binary__ba_present",
+    "binary__htn_yes",
+    "binary__dm_yes",
+    "binary__cad_yes",
+    "binary__appet_poor",
+    "binary__pe_yes",
+    "binary__ane_yes",
+    "multi__sg_1.005",
+    "multi__sg_1.01",
+    "multi__sg_1.015",
+    "multi__sg_1.02",
+    "multi__sg_1.025",
+    "multi__al_0",
+    "multi__al_1",
+    "multi__al_2",
+    "multi__al_3",
+    "multi__al_4",
+    "multi__al_5",
+    "multi__su_0",
+    "multi__su_1",
+    "multi__su_2",
+    "multi__su_3",
+    "multi__su_4",
+    "multi__su_5"
+  ],
+  "input_count": 24,
+  "output_count": 38,
+  "target_mapping": {
+    "notckd": 0,
+    "ckd": 1
+  },
+  "random_state": 42,
+  "test_size": 0.2,
+  "train_rows": 320,
+  "test_rows": 80,
+  "versions": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.1",
+    "sklearn": "1.9.1",
+    "matplotlib": "3.11.2",
+    "seaborn": "0.13.2",
+    "joblib": "1.6.0"
+  },
+  "python_version": "3.12.14",
+  "fit_scope": "train only",
+  "unknown_category_policy": "raise ValueError",
+  "cv_input": "X_train_raw.csv; fit full Pipeline separately inside each CV fold",
+  "load_requires": [
+    "ckd_preprocessing.py on sys.path",
+    "matching dependency versions"
+  ]
+}

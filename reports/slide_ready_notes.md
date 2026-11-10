@@ -26,8 +26,8 @@
 - **Tuned Architectures**: Random Forest, XGBoost, and Support Vector Machine.
 - **Optimization Target**: `scoring='recall'` under 5-Fold Stratified Cross-Validation.
 - **Optimal Hyperparameters**:
-  - XGBoost: `n_estimators=100`, `learning_rate=0.05`, `max_depth=3`, `subsample=0.8`.
-  - Random Forest: `n_estimators=100`, `max_depth=None`, `min_samples_split=2`, `criterion='gini'`.
+  - XGBoost: `n_estimators=100`, `learning_rate=0.05`, `max_depth=3`, `subsample=1.0`.
+  - Random Forest: `n_estimators=50`, `max_depth=None`, `min_samples_split=2`, `criterion='gini'`.
   - SVM: `C=1.0`, `gamma='scale'`, `kernel='rbf'`.
 
 ---

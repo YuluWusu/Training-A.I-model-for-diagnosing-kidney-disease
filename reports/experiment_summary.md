@@ -14,12 +14,12 @@
 
 | Algorithm | Accuracy (Mean) | Accuracy (Std) | Precision (Mean) | Recall (Mean) | F1-Score (Mean) | ROC-AUC (Mean) | Training Time (s) |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Support Vector Machine | 1.0000 | 0.0000 | 1.0000 | **1.0000** | 1.0000 | 1.0000 | 0.175 |
-| Logistic Regression | 0.9906 | 0.0077 | 0.9902 | **0.9950** | 0.9925 | 0.9998 | 2.855 |
-| Random Forest | 0.9875 | 0.0117 | 0.9901 | **0.9900** | 0.9900 | 0.9992 | 0.362 |
-| XGBoost | 0.9812 | 0.0182 | 0.9805 | **0.9900** | 0.9851 | 0.9979 | 0.234 |
-| Decision Tree (CART) | 0.9625 | 0.0159 | 0.9756 | **0.9650** | 0.9700 | 0.9617 | 0.232 |
-| K-Nearest Neighbors | 0.9500 | 0.0182 | 0.9947 | **0.9250** | 0.9584 | 0.9929 | 1.806 |
+| Support Vector Machine | 1.0000 | 0.0000 | 1.0000 | **1.0000** | 1.0000 | 1.0000 | 3.192 |
+| Logistic Regression | 0.9906 | 0.0077 | 0.9902 | **0.9950** | 0.9925 | 0.9998 | 2.888 |
+| Random Forest | 0.9875 | 0.0117 | 0.9901 | **0.9900** | 0.9900 | 0.9992 | 0.608 |
+| XGBoost | 0.9812 | 0.0182 | 0.9805 | **0.9900** | 0.9851 | 0.9979 | 0.376 |
+| Decision Tree (CART) | 0.9625 | 0.0159 | 0.9756 | **0.9650** | 0.9700 | 0.9617 | 0.310 |
+| K-Nearest Neighbors | 0.9500 | 0.0182 | 0.9947 | **0.9250** | 0.9584 | 0.9929 | 3.259 |
 
 ---
 
@@ -47,6 +47,6 @@
 ## 5. Model Selection Justification
 Selected Model: **XGBoost**
 - **Empirical Evidence**: Achieved Test Recall = 1.0000, Test ROC-AUC = 1.0000, and Test F1-Score = 1.0000 on 80 held-out samples.
-- **Clinical Safety**: Zero False Negatives (30 True Negatives, 50 True Positives, 0 False Negatives, 0 False Positives).
+- **Clinical Safety**: 0 False Negatives (30 True Negatives, 50 True Positives, 0 False Negatives, 0 False Positives).
 - **Deployment Compatibility**: Serialized with embedded `make_preprocessor()` into `models/best_model.joblib`.
 - **Latency Benchmark**: Sub-50ms inference latency ready for RESTful API serving.

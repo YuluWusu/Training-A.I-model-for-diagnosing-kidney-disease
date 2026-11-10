@@ -1,0 +1,25 @@
+﻿feature,description,unit_or_values,type
+age,Tuổi,năm,numeric
+bp,Huyết áp,mmHg,numeric
+sg,Tỷ trọng nước tiểu,không đơn vị,categorical
+al,Albumin nước tiểu,mức 0–5,categorical
+su,Đường nước tiểu,mức 0–5,categorical
+rbc,Hồng cầu trong nước tiểu,normal / abnormal,binary
+pc,Tế bào mủ,normal / abnormal,binary
+pcc,Cụm tế bào mủ,notpresent / present,binary
+ba,Vi khuẩn,notpresent / present,binary
+bgr,Đường huyết ngẫu nhiên,mg/dL,numeric
+bu,Urê máu,mg/dL,numeric
+sc,Creatinin huyết thanh,mg/dL,numeric
+sod,Natri,mEq/L,numeric
+pot,Kali,mEq/L,numeric
+hemo,Hemoglobin,gms theo UCI,numeric
+pcv,Thể tích khối hồng cầu,UCI không ghi đơn vị,numeric
+wc,Số lượng bạch cầu,cells/cumm,numeric
+rc,Số lượng hồng cầu,millions/cmm,numeric
+htn,Tăng huyết áp,no / yes,binary
+dm,Đái tháo đường,no / yes,binary
+cad,Bệnh động mạch vành,no / yes,binary
+appet,Sự thèm ăn,good / poor,binary
+pe,Phù chân,no / yes,binary
+ane,Thiếu máu,no / yes,binary

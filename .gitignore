@@ -232,7 +232,7 @@ __marimo__/
 *.sln.docstates
 
 # temp folder and file
-data/
 docs/
 tasks/
 specs/
+.pytest_cache/

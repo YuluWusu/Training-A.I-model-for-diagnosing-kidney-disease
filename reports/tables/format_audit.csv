@@ -1,0 +1,12 @@
+﻿column,raw_repr,count,normalized
+pcv,'\t?',1,?
+pcv,'\t43',1,43
+wc,'\t6200',1,6200
+wc,'\t8400',1,8400
+wc,'\t?',1,?
+rc,'\t?',1,?
+dm,'\tno',3,no
+dm,'\tyes',2,yes
+dm,' yes',1,yes
+cad,'\tno',2,no
+classification,'ckd\t',2,ckd

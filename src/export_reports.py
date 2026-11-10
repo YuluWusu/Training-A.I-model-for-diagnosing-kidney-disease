@@ -84,7 +84,7 @@ def evaluate_baseline_models(X_train, y_train, cv):
             ('classifier', clf)
         ])
         start_time = time.time()
-        cv_res = cross_validate(pipeline, X_train, y_train, cv=cv, scoring=scoring, n_jobs=-1)
+        cv_res = cross_validate(pipeline, X_train, y_train, cv=cv, scoring=scoring, n_jobs=1)
         fit_time = time.time() - start_time
         
         records.append({
@@ -140,7 +140,7 @@ def tune_hyperparameters(X_train, y_train, cv):
             ('preprocessor', ckd_preprocessing.make_preprocessor()),
             ('classifier', clf)
         ])
-        grid = GridSearchCV(pipe, param_grid=param_grid, cv=cv, scoring='recall', n_jobs=-1)
+        grid = GridSearchCV(pipe, param_grid=param_grid, cv=cv, scoring='recall', n_jobs=1)
         grid.fit(X_train, y_train)
         tuned_models[name] = {
             'best_params': grid.best_params_,
@@ -237,9 +237,13 @@ def generate_visualizations(df_baseline, best_model, X_test, y_test, figures_dir
     plt.savefig(os.path.join(figures_dir, 'roc_curves.png'), dpi=300)
     plt.close()
 
-def export_experiment_summary(df_baseline, df_tuned, best_name, output_dir):
+def export_experiment_summary(df_baseline, df_tuned, best_name, best_model, X_test, y_test, output_dir):
     """Export formal experiment summary with Kaggle notebook comparability audit."""
     summary_path = os.path.join(output_dir, 'experiment_summary.md')
+    y_pred = best_model.predict(X_test)
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+    best_row = df_tuned.loc[df_tuned['Model'] == best_name].iloc[0]
+
     content = f"""# Experiment Summary: Machine Learning Model Benchmarking (Chapter 3)
 *Conforming to `specs/ML_Training_Evaluation_Agent_Guide.md`*
 
@@ -263,7 +267,7 @@ def export_experiment_summary(df_baseline, df_tuned, best_name, output_dir):
     content += f"""
 ---
 
-## 3. Tuned Model Performance on Independent Test Set (n=80)
+## 3. Tuned Model Performance on Independent Test Set (n={len(y_test)})
 
 | Model | Best CV Recall | Test Accuracy | Test Recall | Test Precision | Test F1-Score | Test ROC-AUC |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
@@ -287,17 +291,26 @@ def export_experiment_summary(df_baseline, df_tuned, best_name, output_dir):
 
 ## 5. Model Selection Justification
 Selected Model: **{best_name}**
-- **Empirical Evidence**: Achieved Test Recall = 1.0000, Test ROC-AUC = 1.0000, and Test F1-Score = 1.0000 on 80 held-out samples.
-- **Clinical Safety**: Zero False Negatives (30 True Negatives, 50 True Positives, 0 False Negatives, 0 False Positives).
+- **Empirical Evidence**: Achieved Test Recall = {best_row['Test Recall']:.4f}, Test ROC-AUC = {best_row['Test ROC-AUC']:.4f}, and Test F1-Score = {best_row['Test F1-Score']:.4f} on {len(y_test)} held-out samples.
+- **Clinical Safety**: {fn} False Negatives ({tn} True Negatives, {tp} True Positives, {fn} False Negatives, {fp} False Positives).
 - **Deployment Compatibility**: Serialized with embedded `make_preprocessor()` into `models/best_model.joblib`.
 - **Latency Benchmark**: Sub-50ms inference latency ready for RESTful API serving.
 """
     with open(summary_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
-def export_slide_ready_notes(df_baseline, df_tuned, best_name, output_dir):
+def export_slide_ready_notes(df_baseline, df_tuned, tuned_models, best_name, best_model, X_test, y_test, output_dir):
     """Export slide-ready defense notes traceable to experiment logs."""
     notes_path = os.path.join(output_dir, 'slide_ready_notes.md')
+    y_pred = best_model.predict(X_test)
+    tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+    best_row = df_tuned.loc[df_tuned['Model'] == best_name].iloc[0]
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else 0.0
+
+    xgb_p = tuned_models['XGBoost']['best_params']
+    rf_p = tuned_models['Random Forest']['best_params']
+    svm_p = tuned_models['SVM']['best_params']
+
     content = f"""# Slide-Ready Presentation Notes: Chapter 3 Model Training & Evaluation
 *Concise, verifiable bullet points for defense presentation slides*
 
@@ -326,20 +339,20 @@ def export_slide_ready_notes(df_baseline, df_tuned, best_name, output_dir):
 - **Tuned Architectures**: Random Forest, XGBoost, and Support Vector Machine.
 - **Optimization Target**: `scoring='recall'` under 5-Fold Stratified Cross-Validation.
 - **Optimal Hyperparameters**:
-  - XGBoost: `n_estimators=100`, `learning_rate=0.05`, `max_depth=3`, `subsample=0.8`.
-  - Random Forest: `n_estimators=100`, `max_depth=None`, `min_samples_split=2`, `criterion='gini'`.
-  - SVM: `C=1.0`, `gamma='scale'`, `kernel='rbf'`.
+  - XGBoost: `n_estimators={xgb_p['classifier__n_estimators']}`, `learning_rate={xgb_p['classifier__learning_rate']}`, `max_depth={xgb_p['classifier__max_depth']}`, `subsample={xgb_p['classifier__subsample']}`.
+  - Random Forest: `n_estimators={rf_p['classifier__n_estimators']}`, `max_depth={rf_p['classifier__max_depth']}`, `min_samples_split={rf_p['classifier__min_samples_split']}`, `criterion='{rf_p['classifier__criterion']}'`.
+  - SVM: `C={svm_p['classifier__C']}`, `gamma='{svm_p['classifier__gamma']}'`, `kernel='{svm_p['classifier__kernel']}'`.
 
 ---
 
 ### Slide 4: Independent Test Verification & Model Selection
 - **Selected Architecture**: **{best_name}**
-- **Test Performance (n=80)**:
-  - Accuracy: **100.0%** (80/80 correct)
-  - Recall (Sensitivity): **100.0%** (50/50 CKD cases detected)
-  - False Negatives: **0 patients missed**
-  - Specificity: **100.0%** (30/30 healthy cases verified)
-  - ROC-AUC: **1.0000**
+- **Test Performance (n={len(y_test)})**:
+  - Accuracy: **{best_row['Test Accuracy']*100:.1f}%** ({tp+tn}/{len(y_test)} correct)
+  - Recall (Sensitivity): **{best_row['Test Recall']*100:.1f}%** ({tp}/{tp+fn} CKD cases detected)
+  - False Negatives: **{fn} patients missed**
+  - Specificity: **{specificity*100:.1f}%** ({tn}/{tn+fp} healthy cases verified)
+  - ROC-AUC: **{best_row['Test ROC-AUC']:.4f}**
 - **Deployment Readiness**: Preprocessor + Classifier saved as unified `models/best_model.joblib`. Sub-50ms inference latency.
 """
     with open(notes_path, 'w', encoding='utf-8') as f:
@@ -385,8 +398,8 @@ def main():
     generate_visualizations(df_baseline, best_pipeline, X_test, y_test, figures_dir)
     
     print("Exporting experiment summary and slide notes...")
-    export_experiment_summary(df_baseline, df_tuned, best_name, reports_dir)
-    export_slide_ready_notes(df_baseline, df_tuned, best_name, reports_dir)
+    export_experiment_summary(df_baseline, df_tuned, best_name, best_pipeline, X_test, y_test, reports_dir)
+    export_slide_ready_notes(df_baseline, df_tuned, tuned_models, best_name, best_pipeline, X_test, y_test, reports_dir)
     
     print(f"Report generation complete. Artifacts saved in {reports_dir}")
 
