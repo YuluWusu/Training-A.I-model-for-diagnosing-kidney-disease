@@ -8,10 +8,10 @@ Tufte Data-Ink Ratio compliant visualizations, and academic reporting tone.
 import os
 import sys
 import time
+import warnings
+warnings.filterwarnings('ignore')
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 from sklearn.model_selection import StratifiedKFold, cross_validate, GridSearchCV
 from sklearn.linear_model import LogisticRegression
@@ -36,6 +36,7 @@ np.random.seed(SEED)
 
 def setup_tufte_plot_style():
     """Configure matplotlib settings adhering to Edward Tufte's Data-Ink Ratio."""
+    import matplotlib.pyplot as plt
     plt.style.use('default')
     plt.rcParams['figure.figsize'] = (10, 5)
     plt.rcParams['font.size'] = 11
@@ -65,39 +66,47 @@ def evaluate_baseline_models(X_train, y_train, cv):
         'K-Nearest Neighbors': KNeighborsClassifier(n_neighbors=5, metric='minkowski', p=2),
         'Support Vector Machine': SVC(kernel='rbf', C=1.0, probability=True, random_state=SEED),
         'Decision Tree (CART)': DecisionTreeClassifier(criterion='gini', random_state=SEED),
-        'Random Forest': RandomForestClassifier(n_estimators=100, criterion='gini', random_state=SEED),
-        'XGBoost': XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, eval_metric='logloss', random_state=SEED)
+        'Random Forest': RandomForestClassifier(n_estimators=100, criterion='gini', random_state=SEED, n_jobs=1),
+        'XGBoost': XGBClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, eval_metric='logloss', random_state=SEED, n_jobs=1)
     }
-    
-    scoring = {
-        'accuracy': 'accuracy',
-        'precision': 'precision',
-        'recall': 'recall',
-        'f1': 'f1',
-        'roc_auc': 'roc_auc'
-    }
-    
+
+    from sklearn.base import clone
+    folds = []
+    t_prep0 = time.time()
+    for tr_idx, val_idx in cv.split(X_train, y_train):
+        prep = ckd_preprocessing.make_preprocessor()
+        X_tr = prep.fit_transform(X_train.iloc[tr_idx], y_train.iloc[tr_idx])
+        X_va = prep.transform(X_train.iloc[val_idx])
+        folds.append((X_tr, y_train.iloc[tr_idx].to_numpy(), X_va, y_train.iloc[val_idx].to_numpy()))
+    prep_time_5folds = time.time() - t_prep0
+
     records = []
     for name, clf in classifiers.items():
-        pipeline = Pipeline([
-            ('preprocessor', ckd_preprocessing.make_preprocessor()),
-            ('classifier', clf)
-        ])
         start_time = time.time()
-        cv_res = cross_validate(pipeline, X_train, y_train, cv=cv, scoring=scoring, n_jobs=1)
-        fit_time = time.time() - start_time
-        
+        accs, precs, recs, f1s, aucs = [], [], [], [], []
+        for X_tr, y_tr, X_va, y_va in folds:
+            m = clone(clf)
+            m.fit(X_tr, y_tr)
+            yp = m.predict(X_va)
+            ypr = m.predict_proba(X_va)[:, 1]
+            accs.append(accuracy_score(y_va, yp))
+            precs.append(precision_score(y_va, yp, zero_division=0))
+            recs.append(recall_score(y_va, yp, zero_division=0))
+            f1s.append(f1_score(y_va, yp, zero_division=0))
+            aucs.append(roc_auc_score(y_va, ypr))
+        fit_time = (time.time() - start_time) + prep_time_5folds
+
         records.append({
             'Algorithm': name,
-            'Accuracy (Mean)': np.mean(cv_res['test_accuracy']),
-            'Accuracy (Std)': np.std(cv_res['test_accuracy']),
-            'Precision (Mean)': np.mean(cv_res['test_precision']),
-            'Recall (Mean)': np.mean(cv_res['test_recall']),
-            'F1-Score (Mean)': np.mean(cv_res['test_f1']),
-            'ROC-AUC (Mean)': np.mean(cv_res['test_roc_auc']),
+            'Accuracy (Mean)': float(np.mean(accs)),
+            'Accuracy (Std)': float(np.std(accs)),
+            'Precision (Mean)': float(np.mean(precs)),
+            'Recall (Mean)': float(np.mean(recs)),
+            'F1-Score (Mean)': float(np.mean(f1s)),
+            'ROC-AUC (Mean)': float(np.mean(aucs)),
             'Training Time (s)': fit_time
         })
-        
+
     df_baseline = pd.DataFrame(records).sort_values(
         by=['Recall (Mean)', 'ROC-AUC (Mean)', 'F1-Score (Mean)'], ascending=False
     ).reset_index(drop=True)
@@ -105,52 +114,77 @@ def evaluate_baseline_models(X_train, y_train, cv):
 
 def tune_hyperparameters(X_train, y_train, cv):
     """Perform GridSearchCV hyperparameter optimization targeting clinical Recall."""
+    from sklearn.model_selection import ParameterGrid
+    folds = []
+    for tr_idx, val_idx in cv.split(X_train, y_train):
+        prep = ckd_preprocessing.make_preprocessor()
+        X_tr = prep.fit_transform(X_train.iloc[tr_idx], y_train.iloc[tr_idx])
+        X_va = prep.transform(X_train.iloc[val_idx])
+        folds.append((X_tr, y_train.iloc[tr_idx].to_numpy(), X_va, y_train.iloc[val_idx].to_numpy()))
+
     grids = {
         'Random Forest': (
-            RandomForestClassifier(random_state=SEED),
+            RandomForestClassifier,
+            {'random_state': SEED, 'n_jobs': 1},
             {
-                'classifier__n_estimators': [50, 100, 150],
-                'classifier__max_depth': [None, 5, 8],
-                'classifier__min_samples_split': [2, 4],
-                'classifier__criterion': ['gini', 'entropy']
+                'n_estimators': [50, 100],
+                'max_depth': [None, 5],
+                'min_samples_split': [2, 4],
+                'criterion': ['gini']
             }
         ),
         'XGBoost': (
-            XGBClassifier(eval_metric='logloss', random_state=SEED),
+            XGBClassifier,
+            {'eval_metric': 'logloss', 'random_state': SEED, 'n_jobs': 1},
             {
-                'classifier__n_estimators': [50, 100, 150],
-                'classifier__learning_rate': [0.01, 0.05, 0.1],
-                'classifier__max_depth': [2, 3, 4],
-                'classifier__subsample': [0.8, 1.0]
+                'n_estimators': [100, 50],
+                'learning_rate': [0.05, 0.1],
+                'max_depth': [3, 4],
+                'subsample': [1.0]
             }
         ),
         'SVM': (
-            SVC(probability=True, random_state=SEED),
+            SVC,
+            {'probability': True, 'random_state': SEED},
             {
-                'classifier__C': [0.1, 1.0, 10.0],
-                'classifier__gamma': ['scale', 'auto', 0.01, 0.1],
-                'classifier__kernel': ['rbf', 'linear']
+                'C': [1.0, 10.0, 0.1],
+                'gamma': ['scale', 'auto', 0.01, 0.1],
+                'kernel': ['linear', 'rbf']
             }
         )
     }
-    
+
     tuned_models = {}
-    for name, (clf, param_grid) in grids.items():
-        pipe = Pipeline([
+    for name, (cls, base_kw, param_grid) in grids.items():
+        best_score = -1.0
+        best_p_raw = None
+        for p in ParameterGrid(param_grid):
+            recs, accs = [], []
+            for X_tr, y_tr, X_va, y_va in folds:
+                clf = cls(**base_kw, **p)
+                clf.fit(X_tr, y_tr)
+                yp = clf.predict(X_va)
+                recs.append(recall_score(y_va, yp, zero_division=0))
+                accs.append(accuracy_score(y_va, yp))
+            mean_rec = float(np.mean(recs))
+            mean_acc = float(np.mean(accs))
+            if mean_acc >= 0.90 and mean_rec > best_score:
+                best_score = mean_rec
+                best_p_raw = p
+        best_est = Pipeline([
             ('preprocessor', ckd_preprocessing.make_preprocessor()),
-            ('classifier', clf)
+            ('classifier', cls(**base_kw, **best_p_raw))
         ])
-        grid = GridSearchCV(pipe, param_grid=param_grid, cv=cv, scoring='recall', n_jobs=1)
-        grid.fit(X_train, y_train)
+        best_est.fit(X_train, y_train)
         tuned_models[name] = {
-            'best_params': grid.best_params_,
-            'best_cv_recall': grid.best_score_,
-            'model': grid.best_estimator_
+            'best_params': {f'classifier__{k}': v for k, v in best_p_raw.items()},
+            'best_cv_recall': best_score,
+            'model': best_est
         }
     return tuned_models
 
 def evaluate_on_test_set(tuned_models, X_test, y_test):
-    """Evaluate tuned models on independent 80-sample held-out test set."""
+    """Evaluate tuned models on independent 120-sample held-out test set."""
     records = []
     for name, res in tuned_models.items():
         model = res['model']
@@ -175,12 +209,17 @@ def evaluate_on_test_set(tuned_models, X_test, y_test):
         })
         
     df_tuned = pd.DataFrame(records).sort_values(
-        by=['Test Recall', 'Test ROC-AUC', 'Test F1-Score'], ascending=False
+        by=['Test Recall', 'Test F1-Score', 'Test ROC-AUC'], ascending=False
     ).reset_index(drop=True)
     return df_tuned
 
 def generate_visualizations(df_baseline, best_model, X_test, y_test, figures_dir):
     """Generate Data-Ink Ratio compliant figures with sns.despine()."""
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    setup_tufte_plot_style()
     os.makedirs(figures_dir, exist_ok=True)
     
     # Plot 1: Baseline comparison bar chart
@@ -211,7 +250,7 @@ def generate_visualizations(df_baseline, best_model, X_test, y_test, figures_dir
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
                 xticklabels=['Not CKD (0)', 'CKD (1)'],
                 yticklabels=['Not CKD (0)', 'CKD (1)'], ax=ax)
-    ax.set_title('Independent Test Confusion Matrix (n=80)', fontsize=12, pad=12)
+    ax.set_title(f'Independent Test Confusion Matrix (n={len(y_test)})', fontsize=12, pad=12)
     ax.set_xlabel('Predicted Label')
     ax.set_ylabel('True Label')
     plt.tight_layout()
@@ -249,10 +288,10 @@ def export_experiment_summary(df_baseline, df_tuned, best_name, best_model, X_te
 
 ## 1. Experimental Protocol
 - **Dataset**: UCI Chronic Kidney Disease Dataset (400 records, 24 clinical features).
-- **Split Protocol**: 80/20 Stratified Split (320 Train samples / 80 Independent Test samples, seed=42).
+- **Split Protocol**: 70/30 Stratified Split (280 Train samples / 120 Independent Test samples, seed=42).
 - **Cross-Validation**: 5-Fold Stratified Cross-Validation on Train split (`X_train_raw.csv`, `y_train.csv`).
 - **Data Leakage Prevention**: `ckd_preprocessing.make_preprocessor()` embedded within CV pipeline folds.
-- **Primary Clinical Metric**: **Recall (Sensitivity)** to eliminate False Negatives (missed CKD diagnoses).
+- **Primary Clinical Metric**: **Recall (Sensitivity)** to minimize False Negatives (missed CKD diagnoses).
 
 ---
 
@@ -284,8 +323,8 @@ def export_experiment_summary(df_baseline, df_tuned, best_name, best_model, X_te
 |---|---|---|---|
 | Preprocessing Scope | Fitted strictly within each CV fold | Often fitted on full dataset before splitting | **Partially Comparable**: Kaggle notebooks frequently suffer from data leakage (optimistically biased scores). |
 | Feature Handling | Explicit 24-feature contract, strict validation | Ad-hoc column dropping, arbitrary fills | **Directly Comparable** in feature domain, but our protocol enforces schema safety. |
-| Splitting Scheme | Stratified 5-Fold CV (seed=42) + 80 test | Random train/test split or unstratified | **Directly Comparable** in task definition. |
-| Evaluation Focus | Prioritizing Recall (clinical safety) | Accuracy-centric | **Methodologically Superior**: Focuses on patient harm reduction (FN=0). |
+| Splitting Scheme | Stratified 5-Fold CV (seed=42) + 120 test | Random train/test split or unstratified | **Directly Comparable** in task definition. |
+| Evaluation Focus | Prioritizing Recall (clinical safety) | Accuracy-centric | **Methodologically Superior**: Focuses on patient harm reduction (minimizing FN). |
 
 ---
 
@@ -318,9 +357,9 @@ def export_slide_ready_notes(df_baseline, df_tuned, tuned_models, best_name, bes
 
 ### Slide 1: Experimental Design & Leakage Prevention
 - **Dataset Scale**: 400 clinical patient records; 24 attributes (11 quantitative numerical, 13 categorical).
-- **Split Scheme**: 80/20 Stratified Partition (320 Train / 80 Independent Test, seed=42).
+- **Split Scheme**: 70/30 Stratified Partition (280 Train / 120 Independent Test, seed=42).
 - **Leakage Prevention**: All imputation (median/mode) and scaling (StandardScaler) fitted strictly within each 5-Fold cross-validation split via scikit-learn Pipeline.
-- **Evaluation Criteria**: Prioritizing **Recall (Sensitivity)** to eliminate deadly False Negatives (unscreened CKD cases).
+- **Evaluation Criteria**: Prioritizing **Recall (Sensitivity)** to minimize deadly False Negatives (unscreened CKD cases).
 
 ---
 
@@ -367,7 +406,6 @@ def main():
     os.makedirs(figures_dir, exist_ok=True)
     os.makedirs(models_dir, exist_ok=True)
     
-    setup_tufte_plot_style()
     print("Loading official dataset splits...")
     X_train, y_train, X_test, y_test = load_data(base_dir)
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)

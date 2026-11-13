@@ -1,7 +1,7 @@
 {
   "author": "Huỳnh Công Tạo",
   "student_id": "2001240431",
-  "source_file": "kidney_disease.csv",
+  "source_file": "data\\raw\\kidney_disease.csv",
   "sha256": "835c57ec100db2d3751165fae615fec425caf444cca23bab6a853d4c08bf5556",
   "input_features": [
     "age",
@@ -156,18 +156,18 @@
     "ckd": 1
   },
   "random_state": 42,
-  "test_size": 0.2,
-  "train_rows": 320,
-  "test_rows": 80,
+  "test_size": 0.3,
+  "train_rows": 280,
+  "test_rows": 120,
   "versions": {
-    "numpy": "2.5.4",
-    "pandas": "3.1.1",
+    "numpy": "2.4.6",
+    "pandas": "3.0.5",
     "sklearn": "1.9.1",
     "matplotlib": "3.11.2",
     "seaborn": "0.13.2",
     "joblib": "1.6.0"
   },
-  "python_version": "3.12.14",
+  "python_version": "3.11.0",
   "fit_scope": "train only",
   "unknown_category_policy": "raise ValueError",
   "cv_input": "X_train_raw.csv; fit full Pipeline separately inside each CV fold",

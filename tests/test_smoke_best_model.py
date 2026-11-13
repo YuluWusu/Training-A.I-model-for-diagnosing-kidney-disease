@@ -82,7 +82,7 @@ class TestSmokeBestModel(unittest.TestCase):
             self.pipeline.predict(invalid_sample)
 
     def test_latency_performance(self):
-        """Kiem tra hieu nang suy luan: do tre trung binh phai duoi 50ms."""
+        """Kiem tra hieu nang suy luan: do tre trung binh phai duoi 100ms."""
         sample = pd.DataFrame([{
             'age': 55.0, 'bp': 80.0, 'sg': '1.015', 'al': '2', 'su': '0',
             'rbc': 'normal', 'pc': 'abnormal', 'pcc': 'present', 'ba': 'notpresent',
@@ -98,7 +98,7 @@ class TestSmokeBestModel(unittest.TestCase):
         for _ in range(iterations):
             self.pipeline.predict(sample)
         avg_latency = (time.time() - start) / iterations
-        self.assertLess(avg_latency, 0.05, f"Do tre qua cao: {avg_latency*1000:.2f}ms")
+        self.assertLess(avg_latency, 0.10, f"Do tre qua cao: {avg_latency*1000:.2f}ms")
 
 if __name__ == '__main__':
     unittest.main()

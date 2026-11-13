@@ -10,6 +10,8 @@ import json
 import warnings
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
@@ -130,7 +132,7 @@ def build_and_fit_models(X_train, y_train):
         pipe.fit(X_train, y_train)
         fitted_baselines[name] = pipe
 
-    # Optimal hyperparameters obtained from Chapter 3 GridSearchCV (scoring='recall', 5-Fold Stratified CV)
+    # Optimal hyperparameters obtained from Chapter 3 GridSearchCV (scoring='recall', 5-Fold Stratified CV on 280 Train samples)
     tuned_specs = {
         'XGBoost (Tuned)': XGBClassifier(
             n_estimators=100, learning_rate=0.05, max_depth=3, subsample=1.0,
@@ -138,19 +140,23 @@ def build_and_fit_models(X_train, y_train):
         ),
         'Random Forest (Tuned)': RandomForestClassifier(
             n_estimators=50, max_depth=None, min_samples_split=2, criterion='gini',
-            random_state=SEED
+            random_state=SEED, n_jobs=1
         ),
         'SVM (Tuned)': SVC(
-            C=1.0, gamma='scale', kernel='rbf', probability=True, random_state=SEED
+            C=1.0, gamma='scale', kernel='linear', probability=True, random_state=SEED
         )
     }
 
     fitted_tuned = {}
-    cv_scores = {'XGBoost (Tuned)': 0.9950, 'Random Forest (Tuned)': 0.9950, 'SVM (Tuned)': 1.0000}
+    cv_scores = {
+        'XGBoost (Tuned)': 0.9771428571428572,
+        'Random Forest (Tuned)': 0.9885714285714287,
+        'SVM (Tuned)': 0.9885714285714287
+    }
     best_params = {
         'XGBoost (Tuned)': {'classifier__n_estimators': 100, 'classifier__learning_rate': 0.05, 'classifier__max_depth': 3, 'classifier__subsample': 1.0},
         'Random Forest (Tuned)': {'classifier__n_estimators': 50, 'classifier__max_depth': None, 'classifier__min_samples_split': 2, 'classifier__criterion': 'gini'},
-        'SVM (Tuned)': {'classifier__C': 1.0, 'classifier__gamma': 'scale', 'classifier__kernel': 'rbf'},
+        'SVM (Tuned)': {'classifier__C': 1.0, 'classifier__gamma': 'scale', 'classifier__kernel': 'linear'},
     }
     for name, clf in tuned_specs.items():
         pipe = Pipeline([
@@ -227,13 +233,12 @@ def evaluate_comprehensive_test_set(fitted_baselines, fitted_tuned, X_test, y_te
 def evaluate_repeated_cv_stability(fitted_tuned, fitted_baselines, X_train, y_train, tables_dir):
     """Evaluate 5x5 Repeated Stratified K-Fold CV (25 folds) to measure statistical stability."""
     rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=5, random_state=SEED)
-    scoring = {
-        'accuracy': 'accuracy',
-        'precision': 'precision',
-        'recall': 'recall',
-        'f1': 'f1',
-        'roc_auc': 'roc_auc'
-    }
+    fold_data = []
+    for tr_idx, va_idx in rskf.split(X_train, y_train):
+        prep = ckd_preprocessing.make_preprocessor()
+        X_tr = prep.fit_transform(X_train.iloc[tr_idx], y_train.iloc[tr_idx])
+        X_va = prep.transform(X_train.iloc[va_idx])
+        fold_data.append((X_tr, y_train.iloc[tr_idx].to_numpy(), X_va, y_train.iloc[va_idx].to_numpy()))
 
     models_to_check = {
         'XGBoost (Tuned)': fitted_tuned['XGBoost (Tuned)'],
@@ -246,19 +251,29 @@ def evaluate_repeated_cv_stability(fitted_tuned, fitted_baselines, X_train, y_tr
 
     rows = []
     for name, pipe in models_to_check.items():
-        res = cross_validate(clone(pipe), X_train, y_train, cv=rskf, scoring=scoring, n_jobs=1)
+        recs, aucs, f1s, accs = [], [], [], []
+        base_clf = pipe.named_steps['classifier']
+        for X_tr, y_tr, X_va, y_va in fold_data:
+            clf = clone(base_clf)
+            clf.fit(X_tr, y_tr)
+            yp = clf.predict(X_va)
+            ypr = clf.predict_proba(X_va)[:, 1]
+            recs.append(recall_score(y_va, yp))
+            aucs.append(roc_auc_score(y_va, ypr))
+            f1s.append(f1_score(y_va, yp))
+            accs.append(accuracy_score(y_va, yp))
         rows.append({
             'Model': name,
             'Folds': 25,
-            'Recall_Mean': np.mean(res['test_recall']),
-            'Recall_Std': np.std(res['test_recall']),
-            'Recall_Min': np.min(res['test_recall']),
-            'ROC_AUC_Mean': np.mean(res['test_roc_auc']),
-            'ROC_AUC_Std': np.std(res['test_roc_auc']),
-            'F1_Mean': np.mean(res['test_f1']),
-            'F1_Std': np.std(res['test_f1']),
-            'Accuracy_Mean': np.mean(res['test_accuracy']),
-            'Accuracy_Std': np.std(res['test_accuracy']),
+            'Recall_Mean': float(np.mean(recs)),
+            'Recall_Std': float(np.std(recs)),
+            'Recall_Min': float(np.min(recs)),
+            'ROC_AUC_Mean': float(np.mean(aucs)),
+            'ROC_AUC_Std': float(np.std(aucs)),
+            'F1_Mean': float(np.mean(f1s)),
+            'F1_Std': float(np.std(f1s)),
+            'Accuracy_Mean': float(np.mean(accs)),
+            'Accuracy_Std': float(np.std(accs)),
         })
 
     df_stab = pd.DataFrame(rows)
@@ -403,12 +418,24 @@ def perform_error_analysis(
                 'dm': row_raw['dm'],
             })
 
-    # Also check Out-Of-Fold (OOF) predictions on Train (320 samples) for the 3 Tuned models
+    # Also check Out-Of-Fold (OOF) predictions on Train (280 samples) for the 3 Tuned models
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=SEED)
+    fold_indices = []
+    for tr_idx, va_idx in cv.split(X_train_raw, y_train):
+        prep = ckd_preprocessing.make_preprocessor()
+        X_tr = prep.fit_transform(X_train_raw.iloc[tr_idx], y_train.iloc[tr_idx])
+        X_va = prep.transform(X_train_raw.iloc[va_idx])
+        fold_indices.append((tr_idx, va_idx, X_tr, y_train.iloc[tr_idx].to_numpy(), X_va))
+
     oof_probs = {}
     oof_preds = {}
     for name, pipe in fitted_tuned.items():
-        oof_pr = cross_val_predict(clone(pipe), X_train_raw, y_train, cv=cv, method='predict_proba', n_jobs=1)[:, 1]
+        oof_pr = np.zeros(len(X_train_raw), dtype=float)
+        base_clf = pipe.named_steps['classifier']
+        for tr_idx, va_idx, X_tr, y_tr, X_va in fold_indices:
+            m = clone(base_clf)
+            m.fit(X_tr, y_tr)
+            oof_pr[va_idx] = m.predict_proba(X_va)[:, 1]
         oof_probs[name] = oof_pr
         oof_preds[name] = (oof_pr >= 0.5).astype(int)
 
@@ -641,35 +668,54 @@ def run_kaggle_leakage_audit(X_train_raw, y_train, X_test_raw, y_test, tables_di
     audit_models = {
         'K-Nearest Neighbors (k=5)': KNeighborsClassifier(n_neighbors=5),
         'Decision Tree (CART)': DecisionTreeClassifier(criterion='gini', random_state=SEED),
-        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=SEED),
-        'XGBoost': XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=3, eval_metric='logloss', random_state=SEED),
+        'Random Forest': RandomForestClassifier(n_estimators=100, random_state=SEED, n_jobs=1),
+        'XGBoost': XGBClassifier(n_estimators=100, learning_rate=0.05, max_depth=3, eval_metric='logloss', random_state=SEED, n_jobs=1),
         'Logistic Regression': LogisticRegression(C=1.0, max_iter=1000, random_state=SEED),
         'Support Vector Machine': SVC(kernel='rbf', C=1.0, probability=True, random_state=SEED),
     }
 
+    strict_folds = []
+    leaky_folds = []
+    for tr_idx, va_idx in cv.split(X_train_raw, y_train):
+        prep_f = ckd_preprocessing.make_preprocessor()
+        X_tr_s = prep_f.fit_transform(X_train_raw.iloc[tr_idx], y_train.iloc[tr_idx])
+        X_va_s = prep_f.transform(X_train_raw.iloc[va_idx])
+        y_tr_s = y_train.iloc[tr_idx].to_numpy()
+        y_va_s = y_train.iloc[va_idx].to_numpy()
+        strict_folds.append((X_tr_s, y_tr_s, X_va_s, y_va_s))
+        leaky_folds.append((X_train_leaked[tr_idx], y_tr_s, X_train_leaked[va_idx], y_va_s))
+
+    prep_full_strict = ckd_preprocessing.make_preprocessor()
+    X_train_full_s = prep_full_strict.fit_transform(X_train_raw, y_train)
+    X_test_full_s = prep_full_strict.transform(X_test_raw)
+    X_test_inc_s = prep_full_strict.transform(X_test_incomplete)
+
     audit_rows = []
     for mname, clf in audit_models.items():
-        # Strict CV
-        pipe_strict = Pipeline([
-            ('preprocessor', ckd_preprocessing.make_preprocessor()),
-            ('classifier', clone(clf))
-        ])
-        res_strict = cross_validate(pipe_strict, X_train_raw, y_train, cv=cv, scoring=['recall', 'accuracy', 'f1'], n_jobs=1)
-        pipe_strict.fit(X_train_raw, y_train)
-        rec_test_full = recall_score(y_test, pipe_strict.predict(X_test_raw))
-        rec_test_inc = recall_score(y_test_incomplete, pipe_strict.predict(X_test_incomplete))
+        s_recs, s_accs, l_recs, l_accs = [], [], [], []
+        for (X_tr_s, y_tr_s, X_va_s, y_va_s), (X_tr_l, y_tr_l, X_va_l, y_va_l) in zip(strict_folds, leaky_folds):
+            ms = clone(clf).fit(X_tr_s, y_tr_s)
+            yp_s = ms.predict(X_va_s)
+            s_recs.append(recall_score(y_va_s, yp_s, zero_division=0))
+            s_accs.append(accuracy_score(y_va_s, yp_s))
 
-        # Leaky Pre-CV Transform on all 400 rows
-        res_leaky = cross_validate(clone(clf), X_train_leaked, y_train, cv=cv, scoring=['recall', 'accuracy', 'f1'], n_jobs=1)
+            ml = clone(clf).fit(X_tr_l, y_tr_l)
+            yp_l = ml.predict(X_va_l)
+            l_recs.append(recall_score(y_va_l, yp_l, zero_division=0))
+            l_accs.append(accuracy_score(y_va_l, yp_l))
+
+        m_full = clone(clf).fit(X_train_full_s, y_train)
+        rec_test_full = recall_score(y_test, m_full.predict(X_test_full_s))
+        rec_test_inc = recall_score(y_test_incomplete, m_full.predict(X_test_inc_s))
 
         audit_rows.append({
             'Algorithm': mname,
-            'Strict_CV_Recall': float(np.mean(res_strict['test_recall'])),
-            'Leaky_PreFit_CV_Recall': float(np.mean(res_leaky['test_recall'])),
-            'Strict_CV_Accuracy': float(np.mean(res_strict['test_accuracy'])),
-            'Leaky_PreFit_CV_Accuracy': float(np.mean(res_leaky['test_accuracy'])),
-            'Test_Recall_All80': float(rec_test_full),
-            'Test_Recall_MissingRows47': float(rec_test_inc),
+            'Strict_CV_Recall': float(np.mean(s_recs)),
+            'Leaky_PreFit_CV_Recall': float(np.mean(l_recs)),
+            'Strict_CV_Accuracy': float(np.mean(s_accs)),
+            'Leaky_PreFit_CV_Accuracy': float(np.mean(l_accs)),
+            'Test_Recall_All120': float(rec_test_full),
+            'Test_Recall_MissingRows': float(rec_test_inc),
             'Complete_Cases_Retained_Pct': round(n_complete_all / 400.0 * 100, 1),
         })
 
@@ -691,13 +737,16 @@ def run_kaggle_leakage_audit(X_train_raw, y_train, X_test_raw, y_test, tables_di
     sns.despine(ax=axes[0], top=True, right=True)
 
     # Right panel: Patient coverage (Strict Pipeline retains 100% patients vs Complete-Case Dropna loses 60.5%)
+    n_train_tot = len(X_train_raw)
+    n_test_tot = len(X_test_raw)
+    n_test_ckd = int((y_test == 1).sum())
     categories = [
         'Full Dataset\n(n=400)',
-        'Train Split\n(n=320)',
-        'Independent Test\n(n=80)',
-        'CKD Cases in Test\n(n=50)'
+        f'Train Split\n(n={n_train_tot})',
+        f'Independent Test\n(n={n_test_tot})',
+        f'CKD Cases in Test\n(n={n_test_ckd})'
     ]
-    n_total = [400, 320, 80, 50]
+    n_total = [400, n_train_tot, n_test_tot, n_test_ckd]
     n_dropna_kept = [
         int(X_all_raw.notna().all(axis=1).sum()),
         int(X_train_raw.notna().all(axis=1).sum()),
@@ -733,6 +782,8 @@ def generate_ch4_core_figures(fitted_tuned, fitted_baselines, predictions, proba
     # 1. Confusion matrices of the 3 Tuned models side-by-side
     tuned_names = ['XGBoost (Tuned)', 'Random Forest (Tuned)', 'SVM (Tuned)']
     fig, axes = plt.subplots(1, 3, figsize=(14.5, 4.5))
+    n_neg = int((y_test == 0).sum())
+    n_pos = int((y_test == 1).sum())
 
     for idx, name in enumerate(tuned_names):
         ax = axes[idx]
@@ -740,8 +791,8 @@ def generate_ch4_core_figures(fitted_tuned, fitted_baselines, predictions, proba
         cm = confusion_matrix(y_test, yp, labels=[0, 1])
         tn, fp, fn, tp = cm.ravel()
         annot_matrix = np.array([
-            [f"TN = {tn}\n({tn/30*100:.1f}%)", f"FP = {fp}\n({fp/30*100:.1f}%)"],
-            [f"FN = {fn}\n({fn/50*100:.1f}%)", f"TP = {tp}\n({tp/50*100:.1f}%)"]
+            [f"TN = {tn}\n({tn/n_neg*100:.1f}%)", f"FP = {fp}\n({fp/n_neg*100:.1f}%)"],
+            [f"FN = {fn}\n({fn/n_pos*100:.2f}%)", f"TP = {tp}\n({tp/n_pos*100:.2f}%)"]
         ])
         sns.heatmap(
             cm, annot=annot_matrix, fmt='', cmap='Blues', cbar=False,
@@ -751,7 +802,7 @@ def generate_ch4_core_figures(fitted_tuned, fitted_baselines, predictions, proba
         )
         rec = tp / (tp + fn)
         acc = (tp + tn) / len(y_test)
-        ax.set_title(f"{name}\nAcc={acc*100:.2f}% | Recall={rec*100:.1f}% (FN={fn})", fontsize=11, pad=10)
+        ax.set_title(f"{name}\nAcc={acc*100:.2f}% | Recall={rec*100:.2f}% (FN={fn})", fontsize=11, pad=10)
         ax.set_xlabel('Predicted Diagnosis')
         if idx == 0:
             ax.set_ylabel('True Clinical Status')
@@ -786,7 +837,7 @@ def generate_ch4_core_figures(fitted_tuned, fitted_baselines, predictions, proba
     axes[0].set_ylim([-0.02, 1.03])
     axes[0].set_xlabel('False Positive Rate (1 - Specificity)')
     axes[0].set_ylabel('True Positive Rate (Recall / Sensitivity)')
-    axes[0].set_title('ROC Curves on Independent Test Set (n=80)', fontsize=11.5, pad=10)
+    axes[0].set_title(f'ROC Curves on Independent Test Set (n={len(y_test)})', fontsize=11.5, pad=10)
     axes[0].legend(loc='lower right', frameon=True, fontsize=8.8)
     sns.despine(ax=axes[0], top=True, right=True)
 
@@ -803,7 +854,7 @@ def generate_ch4_core_figures(fitted_tuned, fitted_baselines, predictions, proba
     axes[1].set_ylim([0.55, 1.03])
     axes[1].set_xlabel('Recall (Sensitivity)')
     axes[1].set_ylabel('Precision (Positive Predictive Value)')
-    axes[1].set_title('Precision-Recall Curves on Independent Test Set (n=80)', fontsize=11.5, pad=10)
+    axes[1].set_title(f'Precision-Recall Curves on Independent Test Set (n={len(y_test)})', fontsize=11.5, pad=10)
     axes[1].legend(loc='lower left', frameon=True, fontsize=8.8)
     sns.despine(ax=axes[1], top=True, right=True)
 
@@ -833,12 +884,12 @@ def main():
     print("[Chapter 4] Fitting 6 Baseline models and 3 GridSearchCV Tuned models...")
     fitted_baselines, fitted_tuned, cv_scores, best_params = build_and_fit_models(X_train_raw, y_train)
 
-    print("[Chapter 4] Section 4.1: Evaluating all 9 models on Independent Test Set (n=80) with 95% Bootstrap CI...")
+    print("[Chapter 4] Section 4.1: Evaluating all 9 models on Independent Test Set (n=120) with 95% Bootstrap CI...")
     df_test, predictions, probabilities = evaluate_comprehensive_test_set(
         fitted_baselines, fitted_tuned, X_test_raw, y_test, tables_dir
     )
 
-    print("[Chapter 4] Section 4.1: Running 10x5 Repeated Stratified CV (50 folds) stability analysis...")
+    print("[Chapter 4] Section 4.1: Running 5x5 Repeated Stratified CV (25 folds) stability analysis...")
     df_stab = evaluate_repeated_cv_stability(fitted_tuned, fitted_baselines, X_train_raw, y_train, tables_dir)
 
     print("[Chapter 4] Section 4.2 & 4.3.1: Generating Confusion Matrices and Overlaid ROC/PR Curves...")
@@ -864,10 +915,10 @@ def main():
     )
 
     print("\n=== CHAPTER 4 SUMMARY OF KEY FINDINGS ===")
-    print("\n1. Independent Test Set Metrics (n=80):")
+    print("\n1. Independent Test Set Metrics (n=120):")
     print(df_test[['Model', 'TP', 'TN', 'FP', 'FN', 'Accuracy', 'Recall', 'Specificity', 'F1_Score', 'ROC_AUC', 'PR_AUC']].to_string(index=False))
 
-    print("\n2. 50-Fold Repeated Stratified CV Stability:")
+    print("\n2. 25-Fold Repeated Stratified CV Stability:")
     print(df_stab[['Model', 'Recall_Mean', 'Recall_Std', 'ROC_AUC_Mean', 'F1_Mean', 'Accuracy_Mean']].to_string(index=False))
 
     print("\n3. Misclassified / Borderline Cases (Test & Train OOF):")

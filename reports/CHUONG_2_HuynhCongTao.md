@@ -87,11 +87,11 @@ Notebook cũng kiểm tra id duy nhất và các bản ghi trùng toàn bộ đ�
 
 Hình 2.3 (03_histograms_train.png) gồm histogram của 11 biến số theo nhãn. Hình 2.4 (04_boxplots_train.png) trình bày trung vị, khoảng tứ phân vị và các điểm ngoài râu hộp. Các hình này sử dụng Train trước điền khuyết; giá trị thiếu không được đưa vào histogram hoặc boxplot.
 
-Với mỗi biến, tính IQR = Q3 − Q1 và hai ngưỡng Q1 − 1,5×IQR, Q3 + 1,5×IQR. Bảng outliers_iqr_train.csv lưu ngưỡng, số điểm bị đánh dấu, số điểm quan sát và tỷ lệ. Mẫu số của tỷ lệ ngoại lai là số giá trị không thiếu của biến, không phải mặc định 320.
+Với mỗi biến, tính IQR = Q3 − Q1 và hai ngưỡng Q1 − 1,5×IQR, Q3 + 1,5×IQR. Bảng outliers_iqr_train.csv lưu ngưỡng, số điểm bị đánh dấu, số điểm quan sát và tỷ lệ. Mẫu số của tỷ lệ ngoại lai là số giá trị không thiếu của biến, không phải mặc định 280.
 
 Các điểm ngoài ngưỡng là dấu hiệu cần rà soát thống kê. Quy trình giữ lại chúng vì chưa có thông tin nguồn để phân biệt chắc chắn giá trị bệnh lý, sai số đo và lỗi nhập liệu. Không khẳng định rằng mọi điểm lớn đều hợp lệ về lâm sàng. Nếu nghiên cứu thêm winsorization hoặc biến đổi log, cần chọn cách xử lý bằng CV trên Train và giữ Test độc lập.
 
-Trong lần chạy hiện tại, sc có 42/304 giá trị quan sát bị đánh dấu (13,82%), bgr có 33/282 (11,70%), bp có 31/309 (10,03%). Các giá trị lớn nhất trên Train lần lượt gồm sc = 76, bgr = 490 và bu = 322; sod có giá trị nhỏ nhất 4,5. Đây là các quan sát cần truy vết nếu có hồ sơ nguồn. Histogram của bgr, bu và sc cho thấy phần đuôi phía giá trị cao, giải thích vì sao cần xem phân vị và boxplot thay vì chỉ đọc trung bình.
+Trong lần chạy hiện tại (trên tập Train 280 mẫu), bgr có 33/248 giá trị quan sát bị đánh dấu (13,31%), sc có 32/265 (12,08%), bp có 28/272 (10,29%), bu có 26/262 (9,92%). Các giá trị lớn nhất trên Train lần lượt gồm sc = 76, bgr = 490 và bu = 322; sod có giá trị nhỏ nhất 4,5. Đây là các quan sát cần truy vết nếu có hồ sơ nguồn. Histogram của bgr, bu và sc cho thấy phần đuôi phía giá trị cao, giải thích vì sao cần xem phân vị và boxplot thay vì chỉ đọc trung bình.
 
 ### 2.2.5 Tương quan và các biến phân loại
 
@@ -103,7 +103,7 @@ Hình 2.6 (06_categorical_train.png) biểu diễn tỷ lệ nhãn trong từng 
 
 Các hệ số nổi bật của lần chạy được xuất tự động vào reports/KET_QUA_THUC_CHAY.md để số liệu báo cáo khớp với notebook.
 
-Kết quả Pearson trên Train cho thấy hemo–pcv đạt 0,897 với 260 cặp quan sát, pcv–rc đạt 0,815 với 212 cặp, hemo–rc đạt 0,814 với 211 cặp. Cặp sc–sod có Pearson −0,812 với 242 cặp nhưng Spearman chỉ khoảng −0,54. Chênh lệch giữa hai cách đo gợi ý cần xem xét hình dạng phân phối và các điểm cực đoan trước khi kết luận về quan hệ của cặp biến. Những kết quả này được dùng để mô tả dữ liệu, không dùng làm quy tắc chẩn đoán.
+Kết quả Pearson trên Train (280 mẫu) cho thấy hemo–pcv đạt 0,898 với 231 cặp quan sát, pcv–rc đạt 0,817 với 191 cặp, hemo–rc đạt 0,811 với 190 cặp. Cặp sc–sod có Pearson −0,815 với 211 cặp nhưng Spearman chỉ khoảng −0,532 (xấp xỉ −0,53). Ngoài ra, cặp bu–hemo đạt Pearson −0,601 với 232 cặp (Spearman −0,587) và bu–rc đạt Pearson −0,596 với 184 cặp. Chênh lệch giữa hai cách đo gợi ý cần xem xét hình dạng phân phối và các điểm cực đoan trước khi kết luận về quan hệ của cặp biến. Những kết quả này được dùng để mô tả dữ liệu, không dùng làm quy tắc chẩn đoán.
 
 ## 2.3 Chiến lược làm sạch và Pipeline
 
@@ -148,16 +148,16 @@ Chỉ 11 cột số được chuẩn hóa. Các cột One-Hot giữ giá trị 0
 
 ### 2.3.6 Chia tập phân tầng và chống rò rỉ dữ liệu
 
-Dữ liệu được chia Train 80%, Test 20%, random_state=42 và stratify=y. Kết quả với file hiện tại:
+Dữ liệu được chia Train 70%, Test 30%, random_state=42 và stratify=y. Kết quả với file hiện tại:
 
 | Tập | notckd | ckd | Tổng |
 |---|---:|---:|---:|
-| Train | 120 | 200 | 320 |
-| Test | 30 | 50 | 80 |
+| Train | 105 | 175 | 280 |
+| Test | 45 | 75 | 120 |
 
 Chỉ các phép làm sạch xác định sẵn được áp dụng trước chia tập. EDA phân phối và các phép fit thống kê thực hiện sau chia tập. preprocessor.fit_transform chỉ gọi trên Train; Test chỉ gọi transform.
 
-Đối với 5-fold CV của Chương 3, còn một mức chống rò rỉ khác: không dùng ma trận đã được fit tiền xử lý trên toàn bộ 320 dòng trước CV. Trong từng fold, Pipeline phải được fit lại chỉ trên phần huấn luyện của fold. Bộ bàn giao vì vậy có cả dữ liệu sạch cú pháp chưa điền khuyết để Hồng Vũ thực hiện đúng quy trình.
+Đối với 5-fold CV của Chương 3, còn một mức chống rò rỉ khác: không dùng ma trận đã được fit tiền xử lý trên toàn bộ 280 dòng trước CV. Trong từng fold, Pipeline phải được fit lại chỉ trên phần huấn luyện của fold (224 mẫu huấn luyện và 56 mẫu kiểm định mỗi fold, gồm 35 CKD và 21 Not CKD). Bộ bàn giao vì vậy có cả dữ liệu sạch cú pháp chưa điền khuyết để Hồng Vũ thực hiện đúng quy trình.
 
 ## 2.4 Mã nguồn và quy chuẩn bàn giao
 
@@ -185,12 +185,12 @@ Cần phân biệt 24 thuộc tính đầu vào với số chiều sau mã hóa.
 | File | Nội dung | Cách sử dụng |
 |---|---|---|
 | Chuong2_EDA_HuynhCongTao.ipynb | Code, diễn giải, bảng và hình EDA | Chạy toàn bộ trên Kaggle |
-| preprocessor.joblib | Pipeline fit trên 320 dòng Train | Chỉ transform dữ liệu mới |
+| preprocessor.joblib | Pipeline fit trên 280 dòng Train | Chỉ transform dữ liệu mới |
 | ckd_preprocessing.py | Lớp làm sạch và hàm tạo Pipeline | Bắt buộc có khi nạp joblib |
-| data/processed/X_train.csv | 320 × 38, không NaN/Inf | Huấn luyện trực tiếp trên tập Train cố định |
-| data/processed/X_test.csv | 80 × 38, không NaN/Inf | Cho classifier học từ ma trận đã xử lý |
-| data/processed/X_train_raw.csv | 320 × 24, sạch cú pháp, còn NaN | Đầu vào CV với Pipeline đầy đủ |
-| data/processed/X_test_raw.csv | 80 × 24, sạch cú pháp, còn NaN | Đánh giá Pipeline đầy đủ ở Chương 4 |
+| data/processed/X_train.csv | 280 × 38, không NaN/Inf | Huấn luyện trực tiếp trên tập Train cố định |
+| data/processed/X_test.csv | 120 × 38, không NaN/Inf | Cho classifier học từ ma trận đã xử lý |
+| data/processed/X_train_raw.csv | 280 × 24, sạch cú pháp, còn NaN | Đầu vào CV với Pipeline đầy đủ |
+| data/processed/X_test_raw.csv | 120 × 24, sạch cú pháp, còn NaN | Đánh giá Pipeline đầy đủ ở Chương 4 |
 | data/processed/y_train.csv và y_test.csv | Nhãn tương ứng theo dòng | Không sắp xếp lại độc lập |
 | data/processed/split_manifest.csv | id gốc, source_row, split, position | Truy vết bản ghi; position bắt đầu từ 0 |
 | feature_contract.json | Tên cột, miền giá trị, phiên bản | Thống nhất huấn luyện và Web |
@@ -204,7 +204,7 @@ Notebook kiểm tra tải lại joblib, so sánh với ma trận đã xuất, ki
 
 ## Kết luận chương
 
-Quy trình làm sạch đã thống nhất nhãn, nhận diện các giá trị khuyết thiếu ẩn và tổ chức 24 thuộc tính thành ba nhánh tiền xử lý. Dữ liệu được chia phân tầng thành 320 dòng Train và 80 dòng Test. Pipeline học median, mode và tham số chuẩn hóa trên Train, tạo đầu ra 38 chiều và lưu đủ thông tin để sử dụng lại.
+Quy trình làm sạch đã thống nhất nhãn, nhận diện các giá trị khuyết thiếu ẩn và tổ chức 24 thuộc tính thành ba nhánh tiền xử lý. Dữ liệu được chia phân tầng thành 280 dòng Train và 120 dòng Test. Pipeline học median, mode và tham số chuẩn hóa trên Train, tạo đầu ra 38 chiều và lưu đủ thông tin để sử dụng lại.
 
 Các hạn chế còn tồn tại gồm quy mô dữ liệu nhỏ, tỷ lệ thiếu cao ở một số thuộc tính, chưa xác minh được nguồn gốc từng ngoại lai và chưa có đánh giá trên dữ liệu thu thập độc lập. Các bước huấn luyện, lựa chọn siêu tham số và đánh giá Test thuộc Chương 3–4.
 
