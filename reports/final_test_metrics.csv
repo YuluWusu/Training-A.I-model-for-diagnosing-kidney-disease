@@ -1,0 +1,2 @@
+Model,Evaluation Partition,Test Accuracy,Test Recall (Sensitivity),Test Precision,Test F1-Score,Test ROC-AUC,True Negatives (TN),False Positives (FP),False Negatives (FN),True Positives (TP),Selection Integrity
+XGBoost,Independent Test Set (n=80),1.0,1.0,1.0,1.0,1.0,30,0,0,50,Selection-Free Single Pass (Unbiased)
