@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#203a40">
+
+    <title>CKD Screening | Hỗ trợ sàng lọc bệnh thận</title>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">+</div>
+
+                <div>
+                    <h2>CKD<span>Screening</span></h2>
+                    <small>KIDNEY HEALTH SYSTEM</small>
+                </div>
+            </div>
+
+            <div class="sidebar-label">MENU CHÍNH</div>
+
+            <nav class="nav-menu">
+
+                <button class="nav-item active" data-view-target="dashboard">
+                    <span class="nav-icon">▦</span>
+                    <span>Tổng quan</span>
+                </button>
+
+                <button class="nav-item" data-view-target="analysis">
+                    <span class="nav-icon">⌕</span>
+                    <span>Phân tích bệnh thận</span>
+                </button>
+
+                <button class="nav-item" data-view-target="history">
+                    <span class="nav-icon">▤</span>
+                    <span>Lịch sử phân tích</span>
+                </button>
+
+            </nav>
+
+            <div class="sidebar-label">MÔ HÌNH ĐANG SỬ DỤNG</div>
+
+            <div class="sidebar-info">
+                <div class="info-icon">CKD</div>
+
+                <div>
+                    <strong>XGBoost Tuned</strong>
+                    <small>Mô hình dự đoán</small>
+                </div>
+            </div>
+
+            <div class="sidebar-bottom">
+
+                <div class="connection-indicator">
+                    <span class="status-dot" id="sidebarStatusDot"></span>
+                    <span id="sidebarStatusText">
+                        Đang kiểm tra kết nối
+                    </span>
+                </div>
+
+                <small>CKD Screening System</small>
+                <small>Ứng dụng minh họa học máy</small>
+
+            </div>
+
+        </aside>
+
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+
+            <!-- HEADER -->
+            <header class="topbar">
+
+                <div>
+                    <div class="breadcrumb">
+                        Trang chủ /
+                        <span id="breadcrumbCurrent">Tổng quan</span>
+                    </div>
+
+                    <h1 id="pageHeading">Tổng quan hệ thống</h1>
+                </div>
+
+                <div class="topbar-right">
+
+                    <div class="model-badge">
+                        <span class="status-dot online"></span>
+                        XGBoost Tuned
+                    </div>
+
+                    <div class="user-avatar">CKD</div>
+
+                </div>
+
+            </header>
+
+
+            <!-- =====================================
+             DASHBOARD
+        ====================================== -->
+            <section class="view active" id="dashboard">
+
+                <div class="welcome-banner">
+
+                    <div class="welcome-content">
+
+                        <span class="eyebrow">
+                            HỆ THỐNG HỖ TRỢ SÀNG LỌC
+                        </span>
+
+                        <h2>
+                            Theo dõi và phân tích<br>
+                            các chỉ số sức khỏe thận
+                        </h2>
+
+                        <p>
+                            Nhập thông tin lâm sàng và các chỉ số xét nghiệm.
+                            Hệ thống sử dụng mô hình đã huấn luyện để phân loại
+                            dữ liệu thành CKD hoặc Not CKD.
+                        </p>
+
+                        <button class="btn-primary" id="startAnalysisBtn">
+                            Tạo lượt phân tích
+                            <span>→</span>
+                        </button>
+
+                    </div>
+
+                    <div class="welcome-side">
+
+                        <div class="welcome-side-icon">+</div>
+
+                        <strong>Kidney Health</strong>
+
+                        <span>Screening Support System</span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- OVERVIEW -->
+                <div class="section-heading">
+                    <div>
+                        <h2>Tổng quan hệ thống</h2>
+                        <p>Thông tin về ứng dụng và mô hình đang sử dụng</p>
+                    </div>
+                </div>
+
+
+                <div class="stats-grid">
+
+                    <article class="stat-card">
+
+                        <div class="stat-icon blue">24</div>
+
+                        <div>
+                            <p>Thuộc tính đầu vào</p>
+                            <h3>24 <small>trường dữ liệu</small></h3>
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-icon purple">ML</div>
+
+                        <div>
+                            <p>Thuật toán</p>
+                            <h3>XGBoost</h3>
+                            <small>Tuned Model</small>
+                        </div>
+
+                    </article>
+
+
+                    <article class="stat-card">
+
+                        <div class="stat-icon green">✓</div>
+
+                        <div>
+                            <p>Trạng thái mô hình</p>
+                            <h3 id="dashboardModelStatus">Đang kiểm tra</h3>
+
+                            <small id="dashboardModelDescription">
+                                Kết nối backend
+                            </small>
+                        </div>
+
+                    </article>
+
+                </div>
+
+
+                <!-- DASHBOARD CONTENT -->
+                <div class="dashboard-grid">
+
+                    <article class="panel workflow-panel">
+
+                        <div class="panel-heading">
+
+                            <div>
+                                <h3>Quy trình phân tích</h3>
+                                <p>Các bước xử lý dữ liệu của hệ thống</p>
+                            </div>
+
+                            <span class="panel-tag">QUY TRÌNH</span>
+
+                        </div>
+
+
+                        <div class="workflow-list">
+
+                            <div class="workflow-item">
+
+                                <div class="workflow-number">01</div>
+
+                                <div>
+                                    <strong>Nhập thông tin</strong>
+                                    <p>
+                                        Cung cấp các chỉ số xét nghiệm và
+                                        thông tin sức khỏe.
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <div class="workflow-item">
+
+                                <div class="workflow-number">02</div>
+
+                                <div>
+                                    <strong>Tiền xử lý dữ liệu</strong>
+                                    <p>
+                                        Dữ liệu được xử lý bằng pipeline
+                                        đã huấn luyện.
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <div class="workflow-item">
+
+                                <div class="workflow-number">03</div>
+
+                                <div>
+                                    <strong>Phân loại dữ liệu</strong>
+                                    <p>
+                                        Mô hình XGBoost Tuned thực hiện
+                                        dự đoán.
+                                    </p>
+                                </div>
+
+                            </div>
+
+
+                            <div class="workflow-item">
+
+                                <div class="workflow-number">04</div>
+
+                                <div>
+                                    <strong>Hiển thị kết quả</strong>
+                                    <p>
+                                        Trả về nhãn phân lớp và xác suất
+                                        dự đoán.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="panel model-panel">
+
+                        <div class="panel-heading">
+
+                            <div>
+                                <h3>Thông tin mô hình</h3>
+                                <p>Mô hình đang được tích hợp</p>
+                            </div>
+
+                        </div>
+
+
+                        <div class="model-illustration">ML</div>
+
+
+                        <div class="model-detail">
+                            <span>Tên mô hình</span>
+                            <strong>XGBoost Tuned</strong>
+                        </div>
+
+                        <div class="model-detail">
+                            <span>Bài toán</span>
+                            <strong>Phân lớp nhị phân</strong>
+                        </div>
+
+                        <div class="model-detail">
+                            <span>Dữ liệu</span>
+                            <strong>Kidney Disease Dataset</strong>
+                        </div>
+
+                        <div class="model-detail">
+                            <span>Đầu ra</span>
+                            <strong>CKD / Not CKD</strong>
+                        </div>
+
+
+                        <button class="btn-outline full-width" id="modelAnalysisBtn">
+                            Mở chức năng phân tích →
+                        </button>
+
+                    </article>
+
+                </div>
+
+
+                <div class="notice-box">
+
+                    <div class="notice-symbol">i</div>
+
+                    <div>
+                        <strong>Thông báo quan trọng</strong>
+
+                        <p>
+                            Đây là ứng dụng minh họa kết quả của mô hình học máy,
+                            chỉ hỗ trợ sàng lọc và nghiên cứu. Kết quả không thay
+                            thế chẩn đoán, tư vấn hoặc điều trị của bác sĩ.
+                        </p>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- =====================================
+             ANALYSIS
+        ====================================== -->
+            <section class="view" id="analysis">
+
+                <div class="page-intro">
+
+                    <div>
+                        <span class="eyebrow">PHÂN TÍCH DỮ LIỆU</span>
+
+                        <h2>Thông tin sức khỏe</h2>
+
+                        <p>
+                            Nhập các thông tin và chỉ số xét nghiệm
+                            tương ứng với bộ dữ liệu huấn luyện.
+                            Những trường chưa có dữ liệu có thể để trống.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <!-- WIZARD PROGRESS -->
+                <div class="wizard-progress">
+
+                    <div class="wizard-progress-track">
+                        <div class="wizard-progress-fill" id="wizardProgressFill">
+                        </div>
+                    </div>
+
+
+                    <div class="wizard-steps">
+
+                        <div class="wizard-step-indicator active" data-step-indicator="0">
+
+                            <span class="step-number">01</span>
+
+                            <div>
+                                <strong>Thông tin cơ bản</strong>
+                                <small>Thông tin và tiền sử</small>
+                            </div>
+
+                        </div>
+
+
+                        <div class="wizard-step-indicator" data-step-indicator="1">
+
+                            <span class="step-number">02</span>
+
+                            <div>
+                                <strong>Xét nghiệm nước tiểu</strong>
+                                <small>7 thuộc tính</small>
+                            </div>
+
+                        </div>
+
+
+                        <div class="wizard-step-indicator" data-step-indicator="2">
+
+                            <span class="step-number">03</span>
+
+                            <div>
+                                <strong>Xét nghiệm máu</strong>
+                                <small>9 thuộc tính</small>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="wizard-current-caption">
+
+                        <strong id="wizardStepCounter">
+                            Bước 1 / 3
+                        </strong>
+
+                        <span id="wizardStepHint">
+                            Nhập thông tin cơ bản và tiền sử
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- PREDICTION FORM -->
+                <form id="predictionForm">
+
+
+                    <!-- STEP 1: BASIC INFORMATION -->
+                    <div class="form-section wizard-step active" data-step="0">
+
+                        <div class="form-section-heading">
+
+                            <div class="section-icon">01</div>
+
+                            <div>
+                                <h3>Thông tin cơ bản và tiền sử</h3>
+                                <p>Thông tin sức khỏe và tiền sử bệnh lý</p>
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-grid">
+
+                            <div class="form-field">
+                                <label for="age">
+                                    Tuổi <span>(age)</span>
+                                </label>
+
+                                <input type="number" id="age" name="age" min="0" step="any" placeholder="Nhập tuổi">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="bp">
+                                    Huyết áp <span>(bp)</span>
+                                </label>
+
+                                <input type="number" id="bp" name="bp" min="0" step="any"
+                                    placeholder="Nhập chỉ số huyết áp">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="htn">
+                                    Tăng huyết áp <span>(htn)</span>
+                                </label>
+
+                                <select id="htn" name="htn">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="yes">Có</option>
+                                    <option value="no">Không</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="dm">
+                                    Đái tháo đường <span>(dm)</span>
+                                </label>
+
+                                <select id="dm" name="dm">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="yes">Có</option>
+                                    <option value="no">Không</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="cad">
+                                    Bệnh động mạch vành <span>(cad)</span>
+                                </label>
+
+                                <select id="cad" name="cad">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="yes">Có</option>
+                                    <option value="no">Không</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="appet">
+                                    Tình trạng ăn uống <span>(appet)</span>
+                                </label>
+
+                                <select id="appet" name="appet">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="good">Tốt (Good)</option>
+                                    <option value="poor">Kém (Poor)</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="pe">
+                                    Phù chân <span>(pe)</span>
+                                </label>
+
+                                <select id="pe" name="pe">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="yes">Có</option>
+                                    <option value="no">Không</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="ane">
+                                    Thiếu máu <span>(ane)</span>
+                                </label>
+
+                                <select id="ane" name="ane">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="yes">Có</option>
+                                    <option value="no">Không</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- STEP 2: URINE TEST -->
+                    <div class="form-section wizard-step" data-step="1">
+
+                        <div class="form-section-heading">
+
+                            <div class="section-icon purple-bg">02</div>
+
+                            <div>
+                                <h3>Chỉ số xét nghiệm nước tiểu</h3>
+                                <p>Thông tin phân tích mẫu nước tiểu</p>
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-grid">
+
+                            <div class="form-field">
+                                <label for="sg">
+                                    Tỷ trọng nước tiểu <span>(sg)</span>
+                                </label>
+
+                                <select id="sg" name="sg">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="1.005">1.005</option>
+                                    <option value="1.01">1.010</option>
+                                    <option value="1.015">1.015</option>
+                                    <option value="1.02">1.020</option>
+                                    <option value="1.025">1.025</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="al">
+                                    Albumin nước tiểu <span>(al)</span>
+                                </label>
+
+                                <select id="al" name="al">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="su">
+                                    Đường trong nước tiểu <span>(su)</span>
+                                </label>
+
+                                <select id="su" name="su">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="rbc">
+                                    Hồng cầu trong nước tiểu <span>(rbc)</span>
+                                </label>
+
+                                <select id="rbc" name="rbc">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="normal">Bình thường</option>
+                                    <option value="abnormal">Bất thường</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="pc">
+                                    Tế bào mủ <span>(pc)</span>
+                                </label>
+
+                                <select id="pc" name="pc">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="normal">Bình thường</option>
+                                    <option value="abnormal">Bất thường</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="pcc">
+                                    Cụm tế bào mủ <span>(pcc)</span>
+                                </label>
+
+                                <select id="pcc" name="pcc">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="present">Có</option>
+                                    <option value="notpresent">Không</option>
+                                </select>
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="ba">
+                                    Vi khuẩn <span>(ba)</span>
+                                </label>
+
+                                <select id="ba" name="ba">
+                                    <option value="">Chưa có dữ liệu</option>
+                                    <option value="present">Có</option>
+                                    <option value="notpresent">Không</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- STEP 3: BLOOD TEST -->
+                    <div class="form-section wizard-step" data-step="2">
+
+                        <div class="form-section-heading">
+
+                            <div class="section-icon orange-bg">03</div>
+
+                            <div>
+                                <h3>Chỉ số xét nghiệm máu</h3>
+                                <p>Các chỉ số sinh hóa và huyết học</p>
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-grid">
+
+                            <div class="form-field">
+                                <label for="bgr">
+                                    Đường huyết ngẫu nhiên <span>(bgr)</span>
+                                </label>
+
+                                <input type="number" id="bgr" name="bgr" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="bu">
+                                    Ure máu <span>(bu)</span>
+                                </label>
+
+                                <input type="number" id="bu" name="bu" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="sc">
+                                    Creatinine huyết thanh <span>(sc)</span>
+                                </label>
+
+                                <input type="number" id="sc" name="sc" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="sod">
+                                    Natri huyết thanh <span>(sod)</span>
+                                </label>
+
+                                <input type="number" id="sod" name="sod" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="pot">
+                                    Kali huyết thanh <span>(pot)</span>
+                                </label>
+
+                                <input type="number" id="pot" name="pot" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="hemo">
+                                    Hemoglobin <span>(hemo)</span>
+                                </label>
+
+                                <input type="number" id="hemo" name="hemo" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="pcv">
+                                    Thể tích hồng cầu <span>(pcv)</span>
+                                </label>
+
+                                <input type="number" id="pcv" name="pcv" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="wc">
+                                    Bạch cầu <span>(wc)</span>
+                                </label>
+
+                                <input type="number" id="wc" name="wc" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+
+                            <div class="form-field">
+                                <label for="rc">
+                                    Hồng cầu <span>(rc)</span>
+                                </label>
+
+                                <input type="number" id="rc" name="rc" min="0" step="any" placeholder="Nhập chỉ số">
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- WIZARD FOOTER -->
+                    <div class="wizard-footer">
+
+                        <div class="sample-actions">
+
+                            <span>Dữ liệu minh họa:</span>
+
+                            <button type="button" class="text-button" id="sampleCkdBtn">
+                                Mẫu CKD
+                            </button>
+
+                            <button type="button" class="text-button" id="sampleHealthyBtn">
+                                Mẫu Not CKD
+                            </button>
+
+                        </div>
+
+
+                        <div class="wizard-navigation">
+
+                            <button type="reset" class="btn-outline" id="resetFormBtn">
+                                Xóa dữ liệu
+                            </button>
+
+
+                            <div class="wizard-right">
+
+                                <button type="button" class="btn-outline hidden" id="prevStepBtn">
+                                    ← Quay lại
+                                </button>
+
+
+                                <button type="button" class="btn-primary" id="nextStepBtn">
+                                    Tiếp tục →
+                                </button>
+
+
+                                <button type="submit" class="btn-primary hidden" id="predictBtn">
+
+                                    <span id="predictBtnText">
+                                        Phân tích dữ liệu
+                                    </span>
+
+                                    <span>→</span>
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </form>
+
+
+
+                <!-- PREDICTION RESULT -->
+                <section class="result-section hidden" id="resultSection" aria-live="polite">
+
+                    <div class="result-heading">
+
+                        <div>
+                            <span class="eyebrow">KẾT QUẢ PHÂN TÍCH</span>
+
+                            <h2>Kết quả dự đoán</h2>
+
+                            <p id="resultTime">
+                                Kết quả vừa được cập nhật
+                            </p>
+                        </div>
+
+                        <span class="result-tag">XGBoost Tuned</span>
+
+                    </div>
+
+
+                    <div class="result-card" id="resultCard">
+
+                        <div class="result-main">
+
+                            <div class="result-icon" id="resultIcon">CKD</div>
+
+                            <div>
+                                <span class="result-overline">
+                                    KẾT QUẢ PHÂN LỚP
+                                </span>
+
+                                <h3 id="resultTitle">
+                                    Đang chờ kết quả
+                                </h3>
+
+                                <p id="resultDescription"></p>
+                            </div>
+
+                        </div>
+
+
+                        <div class="probability-area">
+
+                            <div class="probability-heading">
+
+                                <strong>
+                                    Xác suất dự đoán của mô hình
+                                </strong>
+
+                                <span>Đầu ra predict_proba</span>
+
+                            </div>
+
+
+                            <div class="probability-item">
+
+                                <div class="probability-label">
+                                    <span>CKD</span>
+                                    <strong id="ckdProbabilityText">--</strong>
+                                </div>
+
+                                <div class="progress-track">
+                                    <div class="progress-fill ckd-fill" id="ckdProbabilityBar">
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <div class="probability-item">
+
+                                <div class="probability-label">
+                                    <span>Not CKD</span>
+                                    <strong id="notCkdProbabilityText">--</strong>
+                                </div>
+
+                                <div class="progress-track">
+                                    <div class="progress-fill healthy-fill" id="notCkdProbabilityBar">
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <p class="probability-note" id="probabilityNote"></p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="result-disclaimer">
+                        <strong>Lưu ý:</strong>
+
+                        Kết quả là dự đoán của mô hình học máy trên dữ liệu được cung cấp,
+                        không phải chẩn đoán y khoa. Vui lòng tham khảo bác sĩ để được
+                        đánh giá và tư vấn chuyên môn.
+                    </div>
+
+                </section>
+
+            </section>
+
+
+
+            <!-- =====================================
+             HISTORY
+        ====================================== -->
+            <section class="view" id="history">
+
+                <div class="history-heading">
+
+                    <div>
+                        <span class="eyebrow">QUẢN LÝ PHÂN TÍCH</span>
+
+                        <h2>Lịch sử phân tích</h2>
+
+                        <p>
+                            Theo dõi và tra cứu các lần phân tích bệnh thận
+                            đã được thực hiện trên hệ thống.
+                        </p>
+                    </div>
+
+
+                    <button class="btn-primary" id="refreshHistoryBtn" type="button">
+
+                        <span>↻</span>
+                        Làm mới
+
+                    </button>
+
+                </div>
+
+
+
+                <!-- HISTORY SUMMARY -->
+                <div class="history-summary">
+
+                    <div class="history-summary-icon">▤</div>
+
+                    <div>
+                        <span>Tổng số lượt đang hiển thị</span>
+                        <strong id="historyTotal">0</strong>
+                    </div>
+
+                </div>
+
+
+
+                <!-- HISTORY TABLE -->
+                <div class="panel history-panel">
+
+                    <div class="panel-heading history-panel-heading">
+
+                        <div>
+                            <h3>Danh sách phân tích</h3>
+
+                            <p>
+                                Các kết quả được lưu tự động sau khi dự đoán thành công
+                            </p>
+                        </div>
+
+                        <span class="panel-tag">DANH SÁCH</span>
+
+                    </div>
+
+
+                    <div class="table-responsive">
+
+                        <table class="history-table">
+
+                            <thead>
+                                <tr>
+                                    <th>Mã lượt</th>
+                                    <th>Thời gian</th>
+                                    <th>Kết quả</th>
+                                    <th>Xác suất CKD</th>
+                                    <th>Xác suất Not CKD</th>
+                                    <th>Mô hình</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+
+
+                            <tbody id="historyTableBody">
+
+                                <tr>
+                                    <td colspan="7" class="history-empty">
+                                        Chọn mục Lịch sử phân tích để tải dữ liệu.
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+
+                    <div class="history-loading hidden" id="historyLoading">
+                        Đang tải dữ liệu lịch sử...
+                    </div>
+
+
+                    <div class="history-error hidden" id="historyError">
+                    </div>
+
+                </div>
+
+
+
+                <!-- HISTORY DETAIL -->
+                <div class="panel history-detail hidden" id="historyDetail">
+
+                    <div class="panel-heading">
+
+                        <div>
+                            <span class="eyebrow">CHI TIẾT PHÂN TÍCH</span>
+
+                            <h3>
+                                Lượt phân tích
+                                <span id="detailRecordId"></span>
+                            </h3>
+
+                            <p id="detailCreatedAt"></p>
+                        </div>
+
+
+                        <button class="btn-outline" id="closeHistoryDetailBtn" type="button">
+                            Đóng chi tiết
+                        </button>
+
+                    </div>
+
+
+
+                    <div class="detail-result">
+
+                        <div>
+                            <span>Kết quả dự đoán</span>
+                            <strong id="detailPrediction"></strong>
+                        </div>
+
+                        <div>
+                            <span>Xác suất CKD</span>
+                            <strong id="detailCkdProbability"></strong>
+                        </div>
+
+                        <div>
+                            <span>Xác suất Not CKD</span>
+                            <strong id="detailNotCkdProbability"></strong>
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="detail-input-heading">
+
+                        <h4>Thông tin đầu vào</h4>
+
+                        <p>
+                            24 thuộc tính được gửi đến mô hình tại lần phân tích này
+                        </p>
+
+                    </div>
+
+
+                    <div class="detail-input-grid" id="detailInputGrid">
+                    </div>
+
+
+                    <div class="result-disclaimer">
+                        Kết quả lưu trữ là đầu ra của mô hình học máy tại thời điểm
+                        phân tích, không phải chẩn đoán y khoa.
+                    </div>
+
+                </div>
+
+            </section>
+
+
+
+            <!-- DELETE CONFIRMATION MODAL -->
+            <div class="modal-backdrop hidden" id="deleteModal" aria-hidden="true">
+
+                <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+
+                    <div class="confirm-icon">!</div>
+
+                    <div class="confirm-content">
+
+                        <span class="confirm-eyebrow">
+                            XÁC NHẬN THAO TÁC
+                        </span>
+
+                        <h3 id="deleteModalTitle">
+                            Xóa lượt phân tích?
+                        </h3>
+
+                        <p>
+                            Bạn có chắc chắn muốn xóa lượt phân tích này?
+                            Dữ liệu đã xóa sẽ không thể khôi phục.
+                        </p>
+
+                        <div class="confirm-record" id="deleteModalRecord">
+                            Lượt phân tích
+                        </div>
+
+                    </div>
+
+
+                    <div class="confirm-actions">
+
+                        <button type="button" class="btn-outline" id="cancelDeleteBtn">
+                            Hủy
+                        </button>
+
+                        <button type="button" class="btn-danger" id="confirmDeleteBtn">
+                            Xóa lượt phân tích
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TOAST NOTIFICATIONS -->
+            <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true">
+            </div>
+
+
+
+            <!-- FOOTER -->
+            <footer class="footer">
+                <span>© 2026 CKD Screening System</span>
+                <span>Machine Learning Project · Kidney Disease</span>
+            </footer>
+
+        </main>
+
+    </div>
+
+
+    <script src="/static/js/app.js"></script>
+
+</body>
+
+</html>
