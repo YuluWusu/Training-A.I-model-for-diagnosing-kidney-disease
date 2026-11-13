@@ -236,3 +236,6 @@ docs/
 tasks/
 specs/
 .pytest_cache/
+
+# local CKD prediction history
+app/ckd_history.db
