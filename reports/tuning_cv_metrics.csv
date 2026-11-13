@@ -1,0 +1,4 @@
+Model,CV Recall (Mean),CV Recall (Std),CV ROC-AUC (Mean),CV F1-Score (Mean),CV Accuracy (Mean),Best Parameters
+SVM,1.0,0.0,1.0,1.0,1.0,"{'classifier__C': 1.0, 'classifier__gamma': 'scale', 'classifier__kernel': 'rbf'}"
+Random Forest,0.9949999999999999,0.010000000000000009,0.9991666666666668,0.9925300828254414,0.990625,"{'classifier__criterion': 'gini', 'classifier__max_depth': None, 'classifier__min_samples_split': 2, 'classifier__n_estimators': 50}"
+XGBoost,0.9949999999999999,0.010000000000000009,0.9974999999999999,0.985183679614574,0.98125,"{'classifier__learning_rate': 0.05, 'classifier__max_depth': 3, 'classifier__n_estimators': 100, 'classifier__subsample': 1.0}"
