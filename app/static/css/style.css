@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -34,7 +35,21 @@
 body {
     min-height: 100vh;
     font-family: 'Be Vietnam Pro', Arial, sans-serif;
-    background: var(--background);
+
+    background-color: var(--background);
+
+    background-image:
+        linear-gradient(
+            rgba(245, 248, 247, 0.42),
+            rgba(245, 248, 247, 0.50)
+        ),
+        url("/static/images/website-background.jpg?v=20261116-abstract3");
+
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    background-attachment: fixed;
+
     color: var(--text);
     font-size: 13px;
 }
@@ -103,7 +118,11 @@ button:disabled {
     font-size: 27px;
     font-weight: 500;
 }
-
+.brand-icon span {
+    display: inline-block;
+    line-height: 1;
+    transform: translateY(-3px);
+}
 .brand h2 {
     font-size: 16px;
     font-weight: 700;
@@ -504,27 +523,50 @@ button:disabled {
 
 
 /* =====================================
-   DASHBOARD BANNER
+   DASHBOARD BANNER - KIDNEY HERO IMAGE
 ===================================== */
 
 .welcome-banner {
-    min-height: 230px;
+    min-height: 250px;
 
     display: flex;
     align-items: center;
     justify-content: space-between;
 
+    position: relative;
+    overflow: hidden;
+
     padding: 32px 36px;
 
     border: 1px solid #e0eae5;
-    border-radius: 11px;
+    border-radius: 14px;
 
-    background: #eaf2ee;
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(247, 251, 248, 0.99) 0%,
+            rgba(247, 251, 248, 0.96) 34%,
+            rgba(247, 251, 248, 0.78) 57%,
+            rgba(247, 251, 248, 0.12) 100%
+        ),
+        url("/static/images/kidney-hero.jpg");
+
+    background-repeat: no-repeat, no-repeat;
+    background-size: 100% 100%, cover;
+    background-position: center, right center;
+
     color: var(--text);
 }
 
 .welcome-content {
+    position: relative;
+    z-index: 1;
     max-width: 700px;
+}
+
+/* HTML cu co the con phan tu welcome-side cu; an no vi anh da nam trong nen banner. */
+.welcome-side {
+    display: none !important;
 }
 
 .welcome-banner .eyebrow {
@@ -533,9 +575,7 @@ button:disabled {
 
 .welcome-banner h2 {
     margin-bottom: 12px;
-
     color: #25423f;
-
     font-size: 27px;
     line-height: 1.45;
     font-weight: 700;
@@ -544,9 +584,7 @@ button:disabled {
 .welcome-banner p {
     max-width: 610px;
     margin-bottom: 21px;
-
     color: #617772;
-
     font-size: 12px;
     line-height: 1.9;
 }
@@ -558,49 +596,6 @@ button:disabled {
 
 .welcome-banner .btn-primary:hover {
     background: #1b665f;
-}
-
-.welcome-side {
-    width: 190px;
-    min-height: 150px;
-
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-
-    margin-left: 20px;
-
-    border-left: 1px solid #d6e4dd;
-
-    color: #49776c;
-}
-
-.welcome-side-icon {
-    width: 54px;
-    height: 54px;
-
-    display: grid;
-    place-items: center;
-
-    border: 1px solid #c5dcd0;
-    border-radius: 12px;
-
-    background: #f3f8f5;
-
-    color: #438477;
-    font-size: 35px;
-    font-weight: 400;
-}
-
-.welcome-side strong {
-    font-size: 12px;
-}
-
-.welcome-side span {
-    color: #829a90;
-    font-size: 9px;
 }
 
 
@@ -1984,10 +1979,6 @@ button:disabled {
     .main-content {
         padding: 0 25px;
     }
-
-    .welcome-side {
-        width: 150px;
-    }
 }
 
 
@@ -2110,11 +2101,21 @@ button:disabled {
     }
 
     .welcome-banner {
+        min-height: 300px;
         padding: 25px 22px;
-    }
 
-    .welcome-side {
-        display: none;
+        background-image:
+            linear-gradient(
+                90deg,
+                rgba(247, 251, 248, 0.99) 0%,
+                rgba(247, 251, 248, 0.94) 55%,
+                rgba(247, 251, 248, 0.72) 100%
+            ),
+            url("/static/images/kidney-hero.jpg");
+
+        background-repeat: no-repeat, no-repeat;
+        background-size: 100% 100%, cover;
+        background-position: center, 72% center;
     }
 
     .welcome-banner h2 {
@@ -2175,6 +2176,7 @@ button:disabled {
     }
 }
 
+
 /* =========================================
    IMPROVED MULTI-STEP PROGRESS
 ========================================= */
@@ -2210,6 +2212,7 @@ button:disabled {
     background: #e8eeea;
 }
 
+/* Phan tien do */
 .wizard-progress-fill {
     height: 100%;
     border-radius: 20px;
@@ -2398,6 +2401,7 @@ button:disabled {
         flex-direction: column;
     }
 }
+
 
 /* =========================================
    TYPOGRAPHY IMPROVEMENT
@@ -2629,4 +2633,274 @@ body {
 
 .toast-content p {
     font-size: 11px;
+}
+
+
+/* =====================================
+   TREE SHAP CALCULATION PANEL
+===================================== */
+
+.calculation-panel {
+    margin-top: 16px;
+    padding: 22px;
+    border: 1px solid #dce9e2;
+    border-radius: 11px;
+    background: #ffffff;
+    box-shadow: var(--shadow);
+}
+
+.calculation-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.calculation-summary-grid>div {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid #e7eeea;
+    border-radius: 8px;
+    background: #f8faf9;
+}
+
+.calculation-summary-grid span {
+    color: #819088;
+    font-size: 9px;
+}
+
+.calculation-summary-grid strong {
+    color: #315f52;
+    font-size: 15px;
+    font-family: Consolas, monospace;
+}
+
+.calculation-equation {
+    display: grid;
+    gap: 8px;
+    margin-top: 15px;
+    padding: 14px;
+    border-radius: 8px;
+    background: #f0f6f2;
+}
+
+.calculation-equation p {
+    color: #5c7569;
+    font-size: 10px;
+}
+
+.calculation-equation code {
+    color: #315e51;
+    font-family: Consolas, monospace;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.calculation-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 17px 0 10px;
+    color: #829189;
+    font-size: 9px;
+}
+
+.calculation-legend span::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 2px;
+}
+
+.legend-positive::before {
+    background: #c96c62;
+}
+
+.legend-negative::before {
+    background: #399876;
+}
+
+.calculation-contributions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 20px;
+    margin-top: 8px;
+}
+
+.calculation-impact-row {
+    min-width: 0;
+    padding: 10px 0;
+    border-bottom: 1px solid #edf1ee;
+}
+
+.calculation-impact-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.calculation-impact-heading>div:first-child,
+.calculation-impact-number {
+    display: grid;
+    gap: 4px;
+}
+
+.calculation-impact-heading strong {
+    color: #496258;
+    font-size: 10px;
+}
+
+.calculation-impact-heading small {
+    color: #91a097;
+    font-size: 8px;
+    line-height: 1.5;
+}
+
+.calculation-impact-number {
+    text-align: right;
+    flex: 0 0 auto;
+}
+
+.toward-ckd .calculation-impact-number strong {
+    color: #bd6158;
+}
+
+.toward-not-ckd .calculation-impact-number strong {
+    color: #338d70;
+}
+
+.calculation-impact-track {
+    height: 6px;
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #eff2f0;
+}
+
+.calculation-impact-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.toward-ckd .calculation-impact-track span {
+    background: #cb756b;
+}
+
+.toward-not-ckd .calculation-impact-track span {
+    background: #3b9a78;
+}
+
+.calculation-note {
+    margin-top: 16px;
+    padding: 11px 13px;
+    border-radius: 7px;
+    background: #f7f9f8;
+    color: #7c8e85;
+    font-size: 9px;
+    line-height: 1.7;
+}
+
+
+/* =====================================
+   RESPONSIVE CALCULATION PANEL
+===================================== */
+
+@media (max-width: 900px) {
+
+    .welcome-banner {
+        background-position: center, right center;
+        background-size: 100% 100%, cover;
+    }
+}
+
+@media (max-width: 760px) {
+
+    .calculation-contributions {
+        grid-template-columns: 1fr;
+    }
+
+    .calculation-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+
+    .welcome-banner {
+        background-position: center, 72% center;
+    }
+}
+
+@media (max-width: 520px) {
+
+    .calculation-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* =====================================
+   SAMPLE DATA SELECT
+===================================== */
+
+.sample-actions-select {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.sample-actions-select label {
+    color: #526c62;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sample-select {
+    min-width: 280px;
+    min-height: 38px;
+    padding: 0 11px;
+    border: 1px solid #dce8e1;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #38574d;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+.sample-select:focus {
+    outline: none;
+    border-color: #63a69a;
+    box-shadow: 0 0 0 3px rgba(47, 125, 112, .09);
+}
+
+.sample-count {
+    color: #82918a;
+    font-size: 10px;
+}
+
+@media (max-width: 600px) {
+
+    .sample-select {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+
+/* =====================================
+   WEBSITE BACKGROUND RESPONSIVE
+===================================== */
+
+@media (max-width: 700px) {
+
+    body {
+        background-attachment: scroll;
+        background-position: center top;
+    }
 }

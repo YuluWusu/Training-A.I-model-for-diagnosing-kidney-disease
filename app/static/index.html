@@ -8,7 +8,7 @@
 
     <title>CKD Screening | Hỗ trợ sàng lọc bệnh thận</title>
 
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=20261116-abstract3">
 </head>
 
 <body>
@@ -19,7 +19,9 @@
         <aside class="sidebar">
 
             <div class="brand">
-                <div class="brand-icon">+</div>
+                <div class="brand-icon">
+                    <span>+</span>
+                </div>
 
                 <div>
                     <h2>CKD<span>Screening</span></h2>
@@ -38,7 +40,7 @@
 
                 <button class="nav-item" data-view-target="analysis">
                     <span class="nav-icon">⌕</span>
-                    <span>Phân tích bệnh thận</span>
+                    <span>Dự đoán bệnh thận</span>
                 </button>
 
                 <button class="nav-item" data-view-target="history">
@@ -106,8 +108,8 @@
 
 
             <!-- =====================================
-             DASHBOARD
-        ====================================== -->
+                 DASHBOARD
+            ====================================== -->
             <section class="view active" id="dashboard">
 
                 <div class="welcome-banner">
@@ -126,23 +128,13 @@
                         <p>
                             Nhập thông tin lâm sàng và các chỉ số xét nghiệm.
                             Hệ thống sử dụng mô hình đã huấn luyện để phân loại
-                            dữ liệu thành CKD hoặc Not CKD.
+                            dữ liệu thành nhóm có bệnh hoặc không có bệnh theo nhãn của bộ dữ liệu.
                         </p>
 
                         <button class="btn-primary" id="startAnalysisBtn">
                             Tạo lượt phân tích
                             <span>→</span>
                         </button>
-
-                    </div>
-
-                    <div class="welcome-side">
-
-                        <div class="welcome-side-icon">+</div>
-
-                        <strong>Kidney Health</strong>
-
-                        <span>Screening Support System</span>
 
                     </div>
 
@@ -318,12 +310,12 @@
 
                         <div class="model-detail">
                             <span>Đầu ra</span>
-                            <strong>CKD / Not CKD</strong>
+                            <strong>Có bệnh / Không bệnh</strong>
                         </div>
 
 
                         <button class="btn-outline full-width" id="modelAnalysisBtn">
-                            Mở chức năng phân tích →
+                            Mở chức năng dự đoán →
                         </button>
 
                     </article>
@@ -352,14 +344,14 @@
 
 
             <!-- =====================================
-             ANALYSIS
-        ====================================== -->
+                 PATIENT PREDICTION
+            ====================================== -->
             <section class="view" id="analysis">
 
                 <div class="page-intro">
 
                     <div>
-                        <span class="eyebrow">PHÂN TÍCH DỮ LIỆU</span>
+                        <span class="eyebrow">DỰ ĐOÁN BỆNH THẬN</span>
 
                         <h2>Thông tin sức khỏe</h2>
 
@@ -791,17 +783,23 @@
                     <!-- WIZARD FOOTER -->
                     <div class="wizard-footer">
 
-                        <div class="sample-actions">
+                        <div class="sample-actions sample-actions-select">
 
-                            <span>Dữ liệu minh họa:</span>
+                            <label for="predictionSampleSelect">
+                                Chọn dữ liệu mẫu:
+                            </label>
 
-                            <button type="button" class="text-button" id="sampleCkdBtn">
-                                Mẫu CKD
+                            <select id="predictionSampleSelect" class="sample-select">
+                                <option value="">Đang tải 10 dữ liệu mẫu...</option>
+                            </select>
+
+                            <button type="button" class="text-button" id="loadPredictionSampleBtn">
+                                Nạp mẫu vào biểu mẫu
                             </button>
 
-                            <button type="button" class="text-button" id="sampleHealthyBtn">
-                                Mẫu Not CKD
-                            </button>
+                            <span class="sample-count">
+                                5 mẫu có bệnh · 5 mẫu không bệnh
+                            </span>
 
                         </div>
 
@@ -828,7 +826,7 @@
                                 <button type="submit" class="btn-primary hidden" id="predictBtn">
 
                                     <span id="predictBtnText">
-                                        Phân tích dữ liệu
+                                        Dự đoán bệnh thận
                                     </span>
 
                                     <span>→</span>
@@ -869,7 +867,7 @@
 
                         <div class="result-main">
 
-                            <div class="result-icon" id="resultIcon">CKD</div>
+                            <div class="result-icon" id="resultIcon">KQ</div>
 
                             <div>
                                 <span class="result-overline">
@@ -902,7 +900,7 @@
                             <div class="probability-item">
 
                                 <div class="probability-label">
-                                    <span>CKD</span>
+                                    <span>Nhóm có bệnh</span>
                                     <strong id="ckdProbabilityText">--</strong>
                                 </div>
 
@@ -917,7 +915,7 @@
                             <div class="probability-item">
 
                                 <div class="probability-label">
-                                    <span>Not CKD</span>
+                                    <span>Nhóm không bệnh</span>
                                     <strong id="notCkdProbabilityText">--</strong>
                                 </div>
 
@@ -936,6 +934,58 @@
                     </div>
 
 
+                    <!-- GIẢI THÍCH TÍNH TOÁN -->
+                    <section class="calculation-panel hidden" id="calculationPanel">
+
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Chi tiết cách mô hình tính ra kết quả</h3>
+                                <p>Giải thích từng thuộc tính bằng XGBoost TreeSHAP</p>
+                            </div>
+
+                            <span class="panel-tag">TÍNH TOÁN THỰC TẾ</span>
+                        </div>
+
+
+                        <div class="calculation-summary-grid">
+
+                            <div>
+                                <span>Điểm cơ sở</span>
+                                <strong id="calculationBaseValue">--</strong>
+                            </div>
+
+                            <div>
+                                <span>Tổng đóng góp SHAP</span>
+                                <strong id="calculationContributionSum">--</strong>
+                            </div>
+
+                            <div>
+                                <span>Điểm đầu ra F(x)</span>
+                                <strong id="calculationRawScore">--</strong>
+                            </div>
+
+                            <div>
+                                <span>Tỷ lệ dự đoán nhóm có bệnh tính lại</span>
+                                <strong id="calculationProbability">--</strong>
+                            </div>
+
+                        </div>
+
+
+                        <div class="calculation-equation" id="calculationEquation"></div>
+
+                        <div class="calculation-legend">
+                            <span class="legend-positive">Làm tăng điểm về phía có bệnh</span>
+                            <span class="legend-negative">Làm tăng điểm về phía không bệnh</span>
+                        </div>
+
+                        <div id="calculationContributions" class="calculation-contributions"></div>
+
+                        <p class="calculation-note" id="calculationNote"></p>
+
+                    </section>
+
+
                     <div class="result-disclaimer">
                         <strong>Lưu ý:</strong>
 
@@ -951,8 +1001,8 @@
 
 
             <!-- =====================================
-             HISTORY
-        ====================================== -->
+                 HISTORY
+            ====================================== -->
             <section class="view" id="history">
 
                 <div class="history-heading">
@@ -1021,8 +1071,8 @@
                                     <th>Mã lượt</th>
                                     <th>Thời gian</th>
                                     <th>Kết quả</th>
-                                    <th>Xác suất CKD</th>
-                                    <th>Xác suất Not CKD</th>
+                                    <th>Tỷ lệ dự đoán có bệnh</th>
+                                    <th>Tỷ lệ dự đoán không bệnh</th>
                                     <th>Mô hình</th>
                                     <th>Thao tác</th>
                                 </tr>
@@ -1089,12 +1139,12 @@
                         </div>
 
                         <div>
-                            <span>Xác suất CKD</span>
+                            <span>Tỷ lệ dự đoán có bệnh</span>
                             <strong id="detailCkdProbability"></strong>
                         </div>
 
                         <div>
-                            <span>Xác suất Not CKD</span>
+                            <span>Tỷ lệ dự đoán không bệnh</span>
                             <strong id="detailNotCkdProbability"></strong>
                         </div>
 
@@ -1192,7 +1242,7 @@
     </div>
 
 
-    <script src="/static/js/app.js"></script>
+    <script src="/static/js/app.js?v=20261116-no-dataset1"></script>
 
 </body>
 
