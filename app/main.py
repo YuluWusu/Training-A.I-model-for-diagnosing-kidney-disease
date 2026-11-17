@@ -11,15 +11,6 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.schemas import PatientInput
-from app.database import (
-    initialize_database,
-    save_history,
-    get_history_list,
-    get_history_detail,
-    delete_history
-)
-
 
 # ==========================================
 # CAU HINH DUONG DAN
@@ -29,6 +20,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 MODEL_PATH = PROJECT_DIR / "models" / "best_model.joblib"
 CONTRACT_PATH = PROJECT_DIR / "feature_contract.json"
+
 STATIC_DIR = PROJECT_DIR / "app" / "static"
 INDEX_FILE = STATIC_DIR / "index.html"
 
@@ -44,12 +36,34 @@ import ckd_preprocessing
 
 
 # ==========================================
+# NAP CAC MODULE CUA UNG DUNG
+# ==========================================
+
+from app.schemas import PatientInput
+
+from app.analytics import (
+    build_dataset_analytics,
+    build_tree_shap_calculation,
+)
+
+from app.sample_data import load_test_samples
+
+from app.database import (
+    initialize_database,
+    save_history,
+    get_history_list,
+    get_history_detail,
+    delete_history,
+)
+
+
+# ==========================================
 # DOC FEATURE CONTRACT
 # ==========================================
 
 if not CONTRACT_PATH.exists():
     raise FileNotFoundError(
-        f"Khong tim thay Feature Contract: {CONTRACT_PATH}"
+        f"Không tìm thấy Feature Contract: {CONTRACT_PATH}"
     )
 
 with open(CONTRACT_PATH, "r", encoding="utf-8") as file:
@@ -58,10 +72,18 @@ with open(CONTRACT_PATH, "r", encoding="utf-8") as file:
 FEATURES = CONTRACT["input_features"]
 
 if len(FEATURES) != 24 or CONTRACT["input_count"] != 24:
-    raise RuntimeError("Feature Contract khong hop le.")
+    raise RuntimeError(
+        "Feature Contract không hợp lệ. "
+        "Hệ thống cần đúng 24 thuộc tính đầu vào."
+    )
 
+
+# ==========================================
+# LOGGING
+# ==========================================
 
 logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 
@@ -72,31 +94,95 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
+    # Khoi tao SQLite
     initialize_database()
+
     logger.info("Database lich su san sang.")
 
+    # Kiem tra model
     if not MODEL_PATH.exists():
         raise FileNotFoundError(
-            f"Khong tim thay model: {MODEL_PATH}"
+            f"Không tìm thấy mô hình: {MODEL_PATH}"
         )
 
     logger.info("Dang nap mo hinh CKD...")
 
     model = joblib.load(MODEL_PATH)
 
+    # Kiem tra tap nhan
     classes = [
-        int(value) for value in model.classes_
+        int(value)
+        for value in model.classes_
     ]
 
     if set(classes) != {0, 1}:
         raise RuntimeError(
-            f"Tap nhan khong hop le: {classes}"
+            f"Tập nhãn của mô hình không hợp lệ: {classes}"
         )
 
     app.state.model = model
 
     logger.info(
         "Da nap mo hinh XGBoost Tuned thanh cong."
+    )
+
+    # ======================================
+    # TAI THONG KE DU LIEU
+    # ======================================
+
+    logger.info(
+        "Dang tinh toan thong ke bo du lieu CKD..."
+    )
+
+    app.state.dataset_analytics = build_dataset_analytics(
+        PROJECT_DIR,
+        model
+    )
+
+    logger.info(
+        "Da tinh toan thong ke bo du lieu CKD."
+    )
+
+    # ======================================
+    # TAI 10 MAU TEST
+    # ======================================
+
+    logger.info(
+        "Dang lay 5 mau CKD va 5 mau Not CKD tu tap Test..."
+    )
+
+    samples = load_test_samples(
+        PROJECT_DIR,
+        limit_per_class=5
+    )
+
+    # Kiem tra so luong
+    ckd_count = sum(
+        sample["actual_class"] == 1
+        for sample in samples
+    )
+
+    not_ckd_count = sum(
+        sample["actual_class"] == 0
+        for sample in samples
+    )
+
+    if len(samples) != 10:
+        raise RuntimeError(
+            f"Can 10 mau du lieu nhung chi lay duoc {len(samples)} mau."
+        )
+
+    if ckd_count != 5 or not_ckd_count != 5:
+        raise RuntimeError(
+            "Phan bo mau khong dung: "
+            f"CKD={ckd_count}, Not CKD={not_ckd_count}"
+        )
+
+    app.state.dataset_samples = samples
+
+    logger.info(
+        "Da nap thanh cong 10 mau Test: "
+        "5 CKD va 5 Not CKD."
     )
 
     yield
@@ -111,7 +197,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CKD Diagnosis API",
     description="API ho tro sang loc benh than man tinh",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan
 )
 
@@ -137,7 +223,7 @@ async def home():
     if not INDEX_FILE.exists():
         raise HTTPException(
             status_code=404,
-            detail="Khong tim thay file giao dien index.html."
+            detail="Không tìm thấy file index.html."
         )
 
     return FileResponse(
@@ -158,10 +244,86 @@ async def health(request: Request):
         "model"
     )
 
+    samples_loaded = hasattr(
+        request.app.state,
+        "dataset_samples"
+    )
+
     return {
         "status": "running",
         "model_loaded": model_loaded,
+        "samples_loaded": samples_loaded,
         "model_name": "XGBoost Tuned"
+    }
+
+
+# ==========================================
+# API THONG KE BO DU LIEU
+# ==========================================
+
+@app.get("/dataset/summary")
+async def dataset_summary(request: Request):
+
+    summary = getattr(
+        request.app.state,
+        "dataset_analytics",
+        None
+    )
+
+    if summary is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Thống kê bộ dữ liệu chưa sẵn sàng."
+        )
+
+    return {
+        "success": True,
+        "data": summary
+    }
+
+
+# ==========================================
+# API LAY 10 MAU DU LIEU TEST
+# ==========================================
+
+@app.get("/dataset/samples")
+async def dataset_samples(request: Request):
+
+    samples = getattr(
+        request.app.state,
+        "dataset_samples",
+        None
+    )
+
+    if samples is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Dữ liệu mẫu chưa sẵn sàng."
+        )
+
+    ckd_samples = [
+        sample
+        for sample in samples
+        if sample["actual_class"] == 1
+    ]
+
+    not_ckd_samples = [
+        sample
+        for sample in samples
+        if sample["actual_class"] == 0
+    ]
+
+    return {
+        "success": True,
+
+        "total": len(samples),
+
+        "summary": {
+            "total_ckd": len(ckd_samples),
+            "total_not_ckd": len(not_ckd_samples),
+        },
+
+        "items": samples
     }
 
 
@@ -178,7 +340,7 @@ async def predict(
     if not hasattr(request.app.state, "model"):
         raise HTTPException(
             status_code=503,
-            detail="Mo hinh AI chua san sang."
+            detail="Mô hình AI chưa sẵn sàng."
         )
 
     model = request.app.state.model
@@ -188,7 +350,7 @@ async def predict(
         # Lay du lieu dau vao
         patient_data = patient.model_dump()
 
-        # Sap xep theo Feature Contract
+        # Sap xep dung 24 thuoc tinh
         patient_df = pd.DataFrame(
             [patient_data],
             columns=FEATURES
@@ -199,13 +361,14 @@ async def predict(
             model.predict(patient_df)[0]
         )
 
-        # Xac suat tung lop
+        # Tinh xac suat
         probabilities = model.predict_proba(
             patient_df
         )[0]
 
         class_order = [
-            int(value) for value in model.classes_
+            int(value)
+            for value in model.classes_
         ]
 
         ckd_index = class_order.index(1)
@@ -225,7 +388,14 @@ async def predict(
             else "Not CKD"
         )
 
-        # Luu lich su phan tich
+        # Giai thich bang TreeSHAP
+        calculation = build_tree_shap_calculation(
+            model,
+            patient_df,
+            CONTRACT
+        )
+
+        # Luu lich su
         history_record = save_history(
             prediction=pred_label,
             prediction_label=result_label,
@@ -242,21 +412,32 @@ async def predict(
 
         return {
             "success": True,
+
             "prediction": pred_label,
+
             "prediction_label": result_label,
+
             "ckd_probability": ckd_probability,
+
             "not_ckd_probability": not_ckd_probability,
+
+            "calculation": calculation,
+
             "model_name": "XGBoost Tuned",
+
             "history_id": history_record["id"],
+
             "created_at": history_record["created_at"],
+
             "message": (
-                "Mo hinh du doan CKD."
+                "Mô hình dự đoán nhóm có nhãn CKD."
                 if pred_label == 1
-                else "Mo hinh du doan Not CKD."
+                else "Mô hình dự đoán nhóm có nhãn Not CKD."
             ),
+
             "disclaimer": (
-                "Ket qua chi mang tinh chat ho tro sang loc, "
-                "khong thay the chan doan cua bac si."
+                "Kết quả chỉ mang tính chất hỗ trợ sàng lọc, "
+                "không thay thế chẩn đoán của bác sĩ."
             )
         }
 
@@ -275,7 +456,7 @@ async def predict(
 
         raise HTTPException(
             status_code=500,
-            detail="Da xay ra loi trong qua trinh du doan."
+            detail="Đã xảy ra lỗi trong quá trình dự đoán."
         )
 
 
@@ -285,10 +466,15 @@ async def predict(
 
 @app.get("/history")
 async def history_list(
-    limit: int = Query(default=100, ge=1, le=200)
+    limit: int = Query(
+        default=100,
+        ge=1,
+        le=200
+    )
 ):
 
     try:
+
         records = get_history_list(limit)
 
         return {
@@ -305,7 +491,7 @@ async def history_list(
 
         raise HTTPException(
             status_code=500,
-            detail="Khong the lay lich su phan tich."
+            detail="Không thể lấy lịch sử phân tích."
         )
 
 
@@ -321,7 +507,7 @@ async def history_detail(record_id: int):
     if record is None:
         raise HTTPException(
             status_code=404,
-            detail="Khong tim thay lan phan tich."
+            detail="Không tìm thấy lượt phân tích."
         )
 
     return {
@@ -342,10 +528,10 @@ async def history_delete(record_id: int):
     if not deleted:
         raise HTTPException(
             status_code=404,
-            detail="Khong tim thay lan phan tich can xoa."
+            detail="Không tìm thấy lượt phân tích cần xóa."
         )
 
     return {
         "success": True,
-        "message": "Da xoa lich su phan tich."
+        "message": "Đã xóa lịch sử phân tích."
     }
