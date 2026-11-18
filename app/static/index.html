@@ -934,6 +934,47 @@
                     </div>
 
 
+                    <!-- CHE DO NGUONG, CHI SO THIEU, THAM CHIEU Y KHOA -->
+                    <section class="insight-panel hidden" id="insightPanel">
+
+                        <div class="panel-heading">
+                            <div>
+                                <h3>Đọc kết quả đúng cách</h3>
+                                <p>Ngưỡng quyết định, độ tin cậy dữ liệu đầu vào và đối chiếu y khoa</p>
+                            </div>
+                            <span class="panel-tag">DIỄN GIẢI</span>
+                        </div>
+
+                        <!-- 1. Che do nguong -->
+                        <div class="insight-block">
+                            <h4>1. Chế độ ngưỡng quyết định (τ)</h4>
+                            <div class="threshold-toggle" role="tablist">
+                                <button type="button" class="threshold-btn active" data-tau="0.5" id="tauStandardBtn">
+                                    Chẩn đoán chuẩn (τ = 0,50)
+                                </button>
+                                <button type="button" class="threshold-btn" data-tau="0.25" id="tauScreeningBtn">
+                                    Tầm soát độ nhạy cao (τ = 0,25)
+                                </button>
+                            </div>
+                            <div class="threshold-verdict" id="thresholdVerdict"></div>
+                            <p class="insight-note" id="thresholdNote"></p>
+                        </div>
+
+                        <!-- 2. Chi so thieu -->
+                        <div class="insight-block">
+                            <h4>2. Độ đầy đủ của dữ liệu đầu vào</h4>
+                            <div id="missingSummary"></div>
+                        </div>
+
+                        <!-- 3. Tham chieu y khoa -->
+                        <div class="insight-block">
+                            <h4>3. Đối chiếu chỉ số với ngưỡng tham chiếu y khoa</h4>
+                            <div id="referenceFlags"></div>
+                        </div>
+
+                    </section>
+
+
                     <!-- GIẢI THÍCH TÍNH TOÁN -->
                     <section class="calculation-panel hidden" id="calculationPanel">
 
@@ -978,6 +1019,8 @@
                             <span class="legend-positive">Làm tăng điểm về phía có bệnh</span>
                             <span class="legend-negative">Làm tăng điểm về phía không bệnh</span>
                         </div>
+
+                        <div id="shapWaterfallChart" class="shap-waterfall-container"></div>
 
                         <div id="calculationContributions" class="calculation-contributions"></div>
 

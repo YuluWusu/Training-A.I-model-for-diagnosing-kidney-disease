@@ -41,6 +41,8 @@ import ckd_preprocessing
 
 from app.schemas import PatientInput
 
+from app.insights import build_clinical_insight
+
 from app.analytics import (
     build_dataset_analytics,
     build_tree_shap_calculation,
@@ -395,6 +397,13 @@ async def predict(
             CONTRACT
         )
 
+        # Giai thich bo sung: chi so thieu, nguong tham chieu, che do nguong tau
+        clinical_insight = build_clinical_insight(
+            model,
+            patient_data,
+            ckd_probability
+        )
+
         # Luu lich su
         history_record = save_history(
             prediction=pred_label,
@@ -423,6 +432,7 @@ async def predict(
 
             "calculation": calculation,
 
+            "clinical_insight": clinical_insight,
             "model_name": "XGBoost Tuned",
 
             "history_id": history_record["id"],

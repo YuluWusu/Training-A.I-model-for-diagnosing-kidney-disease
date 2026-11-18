@@ -1141,6 +1141,8 @@
             );
         }
 
+        displayClinicalInsight(data.clinical_insight);
+
         displayCalculation(data.calculation);
 
         setText(
@@ -1729,6 +1731,240 @@
 
 
     // ==========================================
+    // DIEN GIAI: NGUONG TAU, CHI SO THIEU, THAM CHIEU Y KHOA
+    // ==========================================
+
+    function displayClinicalInsight(insight) {
+        const panel = getElement("insightPanel");
+        if (!panel) {
+            return;
+        }
+        if (!insight) {
+            panel.classList.add("hidden");
+            return;
+        }
+        panel.classList.remove("hidden");
+
+        // ---- 1. Che do nguong tau (tinh phia client tu xac suat) ----
+        const thr = insight.threshold || {};
+        const ckdProb = Number(thr.ckd_probability);
+
+        const renderVerdict = tau => {
+            const positive = ckdProb >= tau;
+            const verdict = getElement("thresholdVerdict");
+            if (verdict) {
+                verdict.className =
+                    "threshold-verdict " + (positive ? "verdict-ckd" : "verdict-not-ckd");
+                verdict.innerHTML = `
+                    <strong>${positive ? "CẢNH BÁO: nghi ngờ CKD" : "Chưa phát hiện dấu hiệu CKD"}</strong>
+                    <span>P(CKD) = ${formatPercent(ckdProb * 100, 2)}
+                    ${positive ? "≥" : "<"} ngưỡng τ = ${String(tau).replace(".", ",")}
+                    ${positive && tau < 0.5 && ckdProb < 0.5
+                        ? " → khuyến nghị xét nghiệm lại / khám chuyên khoa"
+                        : ""}</span>`;
+            }
+            document.querySelectorAll(".threshold-btn").forEach(btn => {
+                btn.classList.toggle("active", Number(btn.dataset.tau) === tau);
+            });
+        };
+
+        document.querySelectorAll(".threshold-btn").forEach(btn => {
+            btn.onclick = () => renderVerdict(Number(btn.dataset.tau));
+        });
+        renderVerdict(0.5);
+        setText("thresholdNote", thr.note || "");
+
+        // ---- 2. Chi so thieu ----
+        const missing = insight.missing || { count: 0, total: 24, items: [], warnings: [] };
+        let missingHtml = `
+            <div class="completeness-bar">
+                <div class="completeness-fill" style="width:${((missing.total - missing.count) / missing.total) * 100}%"></div>
+            </div>
+            <p class="completeness-label">
+                Đã nhập <strong>${missing.total - missing.count}/${missing.total}</strong> chỉ số
+                ${missing.count === 0
+                    ? "– dữ liệu đầy đủ, không cần điền khuyết."
+                    : `– <strong>${missing.count}</strong> chỉ số bị thiếu được Pipeline tự điền bằng thống kê học từ tập Train (không dùng nhãn):`}
+            </p>`;
+
+        if (missing.count > 0) {
+            missingHtml += `<div class="missing-chip-list">` + missing.items.map(item => `
+                <span class="missing-chip ${item.is_core ? "core" : ""}">
+                    ${escapeHtml(item.label)}
+                    <em>→ ${escapeHtml(item.imputed_value)} (${escapeHtml(item.method)})</em>
+                </span>`).join("") + `</div>`;
+        }
+        (missing.warnings || []).forEach(text => {
+            missingHtml += `<div class="insight-warning">⚠ ${escapeHtml(text)}</div>`;
+        });
+        setHTML("missingSummary", missingHtml);
+
+        // ---- 3. Tham chieu y khoa ----
+        const flags = insight.reference_flags || [];
+        if (flags.length === 0) {
+            setHTML(
+                "referenceFlags",
+                `<p class="completeness-label">Không có chỉ số nào nằm ngoài ngưỡng tham chiếu trong các giá trị đã nhập.</p>`
+            );
+        } else {
+            setHTML(
+                "referenceFlags",
+                `<div class="reference-list">` + flags.map(flag => `
+                    <div class="reference-item ${escapeHtml(flag.status)}">
+                        <div>
+                            <strong>${escapeHtml(flag.label)}</strong>
+                            <small>${escapeHtml(flag.note)}</small>
+                        </div>
+                        <div class="reference-values">
+                            <span class="reference-actual">${escapeHtml(flag.value)} ${escapeHtml(flag.unit)}</span>
+                            <small>Tham chiếu: ${escapeHtml(flag.reference)}</small>
+                        </div>
+                    </div>`).join("") + `</div>
+                    <p class="insight-note">Ngưỡng tham chiếu mang tính khái quát cho người trưởng thành; đối chiếu với biểu đồ SHAP bên dưới để thấy chỉ số bất thường nào thực sự kéo điểm dự đoán của mô hình.</p>`
+            );
+        }
+    }
+
+
+    function renderShapWaterfall(baseValue, rawScore, probability, contributions) {
+        const container = getElement("shapWaterfallChart");
+        if (!container || !Array.isArray(contributions) || contributions.length === 0) {
+            if (container) container.innerHTML = "";
+            return;
+        }
+
+        const topN = 9;
+        const sorted = [...contributions].sort(
+            (a, b) => Math.abs(Number(b.contribution)) - Math.abs(Number(a.contribution))
+        );
+        const topItems = sorted.slice(0, topN);
+        const restItems = sorted.slice(topN);
+
+        const steps = topItems.map(item => {
+            const valStr =
+                item.input_value === null || item.input_value === undefined
+                    ? "thiếu"
+                    : String(item.input_value);
+            return {
+                label: `${item.label || item.feature} = ${valStr}`,
+                impact: Number(item.contribution),
+                isRest: false
+            };
+        });
+
+        if (restItems.length > 0) {
+            const restSum = restItems.reduce((acc, it) => acc + Number(it.contribution), 0);
+            steps.push({
+                label: `${restItems.length} đặc trưng còn lại`,
+                impact: restSum,
+                isRest: true
+            });
+        }
+
+        // Compute cumulative waterfall coordinates from bottom (baseValue) to top (rawScore)
+        // Standard SHAP waterfall renders largest contributors at the top, accumulating from baseValue at bottom.
+        const orderedBottomUp = [...steps].reverse();
+        let running = baseValue;
+        const bars = orderedBottomUp.map(step => {
+            const start = running;
+            const end = running + step.impact;
+            running = end;
+            return { ...step, start, end };
+        });
+        const displayRows = [...bars].reverse();
+
+        const allVals = [baseValue, rawScore];
+        displayRows.forEach(b => {
+            allVals.push(b.start, b.end);
+        });
+        const minVal = Math.min(...allVals);
+        const maxVal = Math.max(...allVals);
+        const span = Math.max(maxVal - minVal, 0.25);
+        const padVal = span * 0.16;
+        const domainMin = minVal - padVal;
+        const domainMax = maxVal + padVal;
+
+        const svgWidth = 760;
+        const marginLeft = 240;
+        const marginRight = 78;
+        const marginTop = 44;
+        const marginBottom = 42;
+        const rowHeight = 31;
+        const barHeight = 19;
+        const plotWidth = svgWidth - marginLeft - marginRight;
+        const svgHeight = marginTop + displayRows.length * rowHeight + marginBottom;
+
+        const xOf = v => marginLeft + ((v - domainMin) / (domainMax - domainMin)) * plotWidth;
+        const xBase = xOf(baseValue);
+        const xFinal = xOf(rawScore);
+
+        let rowsSvg = "";
+        displayRows.forEach((row, idx) => {
+            const yCenter = marginTop + idx * rowHeight + rowHeight / 2;
+            const yTop = yCenter - barHeight / 2;
+            const x1 = xOf(row.start);
+            const x2 = xOf(row.end);
+            const isPos = row.impact >= 0;
+            const fill = row.isRest
+                ? (isPos ? "#e09f9c" : "#8fbdb6")
+                : (isPos ? "#c65d58" : "#267d73");
+            const rectX = Math.min(x1, x2);
+            const rectW = Math.max(Math.abs(x2 - x1), 2.5);
+
+            // Subtle row guide line
+            rowsSvg += `<line x1="${marginLeft}" y1="${yCenter}" x2="${svgWidth - marginRight}" y2="${yCenter}" stroke="#edf2f0" stroke-width="1" />`;
+
+            // Connector dotted line to next step below
+            if (idx < displayRows.length - 1) {
+                const nextYCenter = marginTop + (idx + 1) * rowHeight + rowHeight / 2;
+                rowsSvg += `<line x1="${x1}" y1="${yTop + barHeight}" x2="${x1}" y2="${nextYCenter - barHeight / 2}" stroke="#9fb0ad" stroke-width="1" stroke-dasharray="2.5,2.5" />`;
+            }
+
+            // Waterfall bar
+            rowsSvg += `<rect x="${rectX.toFixed(1)}" y="${yTop.toFixed(1)}" width="${rectW.toFixed(1)}" height="${barHeight}" rx="3.5" fill="${fill}" opacity="0.93" />`;
+
+            // Feature label on left
+            const safeLabel = escapeHtml(row.label.length > 32 ? row.label.slice(0, 30) + "…" : row.label);
+            rowsSvg += `<text x="${marginLeft - 10}" y="${yCenter + 4}" text-anchor="end" font-size="11.5" font-weight="${row.isRest ? "500" : "600"}" fill="${row.isRest ? "#6b7d7a" : "#203a40"}">${safeLabel}</text>`;
+
+            // Impact value label next to bar
+            const impactText = `${isPos ? "+" : ""}${formatNumber(row.impact, 3)}`;
+            const textOnRight = rectX + rectW + 46 < svgWidth - 6;
+            const labelX = textOnRight ? rectX + rectW + 6 : rectX - 6;
+            const anchor = textOnRight ? "start" : "end";
+            rowsSvg += `<text x="${labelX.toFixed(1)}" y="${yCenter + 4}" text-anchor="${anchor}" font-size="11" font-weight="700" fill="${isPos ? "#a94440" : "#1b665f"}">${impactText}</text>`;
+        });
+
+        const yPlotTop = marginTop - 6;
+        const yPlotBottom = svgHeight - marginBottom + 6;
+        const probText = formatPercent(probability * 100, 2);
+
+        const svg = `
+            <svg class="shap-waterfall-svg" viewBox="0 0 ${svgWidth} ${svgHeight}" role="img" aria-label="Biểu đồ SHAP Waterfall giải thích dự đoán">
+                <line x1="${xBase.toFixed(1)}" y1="${yPlotTop}" x2="${xBase.toFixed(1)}" y2="${yPlotBottom}" stroke="#839592" stroke-width="1.3" stroke-dasharray="4,3" />
+                <line x1="${xFinal.toFixed(1)}" y1="${yPlotTop}" x2="${xFinal.toFixed(1)}" y2="${yPlotBottom}" stroke="#203a40" stroke-width="1.6" stroke-dasharray="4,3" />
+                ${rowsSvg}
+                <text x="${xFinal.toFixed(1)}" y="18" text-anchor="middle" font-size="11.5" font-weight="700" fill="#203a40">
+                    f(x) = ${formatNumber(rawScore, 3)} (${probText} CKD)
+                </text>
+                <text x="${xBase.toFixed(1)}" y="${svgHeight - 14}" text-anchor="middle" font-size="11" font-weight="600" fill="#647774">
+                    E[f(x)] = ${formatNumber(baseValue, 3)} (Mức nền)
+                </text>
+            </svg>
+        `;
+
+        container.innerHTML = `
+            <div class="shap-waterfall-header">
+                <div>
+                    <h4>Biểu đồ SHAP Waterfall (Thác nước cộng dồn thời gian thực)</h4>
+                    <p>Cộng dồn từ điểm nền E[f(x)] đến điểm dự đoán f(x) của bệnh nhân hiện tại</p>
+                </div>
+            </div>
+            ${svg}
+        `;
+    }
+
+    // ==========================================
     // GIAI THICH KET QUA TREE SHAP
     // ==========================================
 
@@ -1815,6 +2051,7 @@
             `
         );
 
+        renderShapWaterfall(baseValue, rawScore, probability, calculation.contributions);
 
         // Dong gop tung thuoc tinh
         const contributions = calculation.contributions;
