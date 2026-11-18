@@ -652,18 +652,21 @@
                 );
             }
 
-            const samples = data.items;
+            const internalSamples = data.items;
+            const externalSamples = Array.isArray(data.external_items)
+                ? data.external_items
+                : [];
 
-            const ckdCount = samples.filter(
+            const ckdCount = internalSamples.filter(
                 item => Number(item.actual_class) === 1
             ).length;
 
-            const notCkdCount = samples.filter(
+            const notCkdCount = internalSamples.filter(
                 item => Number(item.actual_class) === 0
             ).length;
 
             if (
-                samples.length !== 10 ||
+                internalSamples.length !== 10 ||
                 ckdCount !== 5 ||
                 notCkdCount !== 5
             ) {
@@ -673,6 +676,8 @@
                     `Không bệnh: ${notCkdCount}/5.`
                 );
             }
+
+            const samples = [...externalSamples, ...internalSamples];
 
             // Kiểm tra đủ và đúng tên 24 thuộc tính theo Feature Contract.
             const expectedFeatures = Object.keys(FIELD_LABELS);
@@ -731,15 +736,21 @@
 
         defaultOption.value = "";
         defaultOption.textContent =
-            "Chọn một bộ dữ liệu mẫu...";
+            "Chọn mẫu (Ngoại vi UCI #857 · Lâm sàng KDIGO · Test nội bộ)...";
 
         select.appendChild(defaultOption);
 
+        const extGroup = document.createElement("optgroup");
+        extGroup.label = "NGOẠI VI — BV ENAM BANGLADESH (UCI #857)";
+
+        const clinicalGroup = document.createElement("optgroup");
+        clinicalGroup.label = "LÂM SÀNG & CA CẬN BIÊN (KDIGO / DEMO τ)";
+
         const ckdGroup = document.createElement("optgroup");
-        ckdGroup.label = "CÓ BỆNH (5 MẪU)";
+        ckdGroup.label = "TẬP TEST NỘI BỘ — CÓ BỆNH (UCI #336)";
 
         const notCkdGroup = document.createElement("optgroup");
-        notCkdGroup.label = "KHÔNG BỆNH (5 MẪU)";
+        notCkdGroup.label = "TẬP TEST NỘI BỘ — KHÔNG BỆNH (UCI #336)";
 
         samples.forEach((sample, index) => {
             const option = document.createElement("option");
@@ -749,13 +760,19 @@
             option.textContent =
                 `${sample.sample_code} - ${sample.actual_label}`;
 
-            if (Number(sample.actual_class) === 1) {
+            if (sample.group === "external_uci857") {
+                extGroup.appendChild(option);
+            } else if (sample.group === "clinical_stress") {
+                clinicalGroup.appendChild(option);
+            } else if (Number(sample.actual_class) === 1) {
                 ckdGroup.appendChild(option);
             } else {
                 notCkdGroup.appendChild(option);
             }
         });
 
+        if (extGroup.children.length > 0) select.appendChild(extGroup);
+        if (clinicalGroup.children.length > 0) select.appendChild(clinicalGroup);
         select.appendChild(ckdGroup);
         select.appendChild(notCkdGroup);
 
@@ -897,8 +914,22 @@
 
                     const actualLabel =
                         Number(sample.actual_class) === 1
-                            ? "Có bệnh"
-                            : "Không bệnh";
+                            ? "Có bệnh (CKD)"
+                            : "Không bệnh (Not CKD)";
+
+                    const metaBanner = getElement("selectedSampleMeta");
+                    if (metaBanner) {
+                        const isPos = Number(sample.actual_class) === 1;
+                        metaBanner.className = `selected-sample-meta ${isPos ? "meta-ckd" : "meta-not-ckd"}`;
+                        metaBanner.innerHTML = `
+                            <div class="meta-top">
+                                <strong>${escapeHtml(sample.sample_code)}</strong>
+                                <span class="meta-badge">${escapeHtml(sample.source_name || "Tập Test độc lập (UCI #336)")}</span>
+                                <span class="meta-truth">Nhãn thực tế: <b>${escapeHtml(actualLabel)}</b></span>
+                            </div>
+                            ${sample.clinical_note ? `<p>${escapeHtml(sample.clinical_note)}</p>` : ""}
+                        `;
+                    }
 
                     showToast(
                         `Đã nạp ${sample.sample_code}. Nhãn thực tế: ${actualLabel}.`,
@@ -1270,6 +1301,12 @@
 
                 if (select) {
                     select.value = "";
+                }
+
+                const metaBanner = getElement("selectedSampleMeta");
+                if (metaBanner) {
+                    metaBanner.classList.add("hidden");
+                    metaBanner.innerHTML = "";
                 }
             }, 0);
         });

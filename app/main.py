@@ -48,7 +48,7 @@ from app.analytics import (
     build_tree_shap_calculation,
 )
 
-from app.sample_data import load_test_samples
+from app.sample_data import load_external_and_clinical_samples, load_test_samples
 
 from app.database import (
     initialize_database,
@@ -181,6 +181,12 @@ async def lifespan(app: FastAPI):
         )
 
     app.state.dataset_samples = samples
+    app.state.external_samples = load_external_and_clinical_samples(PROJECT_DIR)
+
+    logger.info(
+        "Da nap them %s mau kiem dinh ngoai vi & lam sang.",
+        len(app.state.external_samples),
+    )
 
     logger.info(
         "Da nap thanh cong 10 mau Test: "
@@ -296,6 +302,11 @@ async def dataset_samples(request: Request):
         "dataset_samples",
         None
     )
+    external_samples = getattr(
+        request.app.state,
+        "external_samples",
+        []
+    )
 
     if samples is None:
         raise HTTPException(
@@ -323,9 +334,12 @@ async def dataset_samples(request: Request):
         "summary": {
             "total_ckd": len(ckd_samples),
             "total_not_ckd": len(not_ckd_samples),
+            "total_external": len(external_samples),
         },
 
-        "items": samples
+        "items": samples,
+
+        "external_items": external_samples,
     }
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -290,5 +291,174 @@ def load_test_samples(
         raise RuntimeError(
             "Số lượng mẫu của hai nhóm không đúng yêu cầu."
         )
+
+    return samples
+
+
+
+def _parse_uci857_midpoint(
+    value: Any,
+    low_default: float | None = None,
+    high_default: float | None = None,
+) -> float | None:
+    """Chuyển chuỗi khoảng giá trị của UCI 857 sang điểm đại diện để suy luận."""
+    if pd.isna(value):
+        return None
+    text = str(value).strip()
+    if "-" in text:
+        parts = [float(x.strip()) for x in text.split("-", 1)]
+        return round((parts[0] + parts[1]) / 2.0, 2)
+    match = re.search(r"([0-9.]+)", text)
+    number = float(match.group(1)) if match else None
+    if text.startswith("<") and low_default is not None:
+        return low_default
+    if text.startswith("≥") and high_default is not None:
+        return high_default
+    return number
+
+
+def _uci857_row_to_features(row: pd.Series) -> dict[str, Any]:
+    """Ánh xạ một bệnh án thật từ Enam Medical College (UCI 857) sang 24 thuộc tính chuẩn."""
+    sg_val = _parse_uci857_midpoint(row["sg"], 1.005, 1.025)
+    sg_levels = [1.005, 1.01, 1.015, 1.02, 1.025]
+    sg_best = min(sg_levels, key=lambda lv: abs(lv - (sg_val or 1.02)))
+
+    al_val = int(round(_parse_uci857_midpoint(row["al"], 0.0, 4.0) or 0.0))
+    su_val = int(round(_parse_uci857_midpoint(row["su"], 0.0, 4.0) or 0.0))
+    sc_text = str(row["sc"]).strip()
+    sc_val = None if sc_text == "< 3.65" else _parse_uci857_midpoint(sc_text, 1.0, 20.0)
+
+    raw_features = {
+        "age": _parse_uci857_midpoint(row["age"], 10.0, 80.0),
+        "bp": None,  # UCI 857 mã hóa huyết áp dạng 0/1 thay vì mmHg
+        "sg": format(sg_best, "g"),
+        "al": str(max(0, min(5, al_val))),
+        "su": str(max(0, min(5, su_val))),
+        "rbc": "abnormal" if str(row["rbc"]).strip() == "1" else "normal",
+        "pc": "abnormal" if str(row["pc"]).strip() == "1" else "normal",
+        "pcc": "present" if str(row["pcc"]).strip() == "1" else "notpresent",
+        "ba": "present" if str(row["ba"]).strip() == "1" else "notpresent",
+        "bgr": _parse_uci857_midpoint(row["bgr"], 95.0, 450.0),
+        "bu": _parse_uci857_midpoint(row["bu"], 30.0, 240.0),
+        "sc": sc_val,
+        "sod": _parse_uci857_midpoint(row["sod"], 115.0, 155.0),
+        "pot": _parse_uci857_midpoint(row["pot"], 4.2, 43.0),
+        "hemo": _parse_uci857_midpoint(row["hemo"], 6.5, 16.8),
+        "pcv": _parse_uci857_midpoint(row["pcv"], 20.0, 50.0),
+        "wc": _parse_uci857_midpoint(row["wbcc"], 4500.0, 20000.0),
+        "rc": _parse_uci857_midpoint(row["rbcc"], 2.5, 6.5),
+        "htn": "yes" if str(row["htn"]).strip() == "1" else "no",
+        "dm": "yes" if str(row["dm"]).strip() == "1" else "no",
+        "cad": "yes" if str(row["cad"]).strip() == "1" else "no",
+        "appet": "poor" if str(row["appet"]).strip() == "1" else "good",
+        "pe": "yes" if str(row["pe"]).strip() == "1" else "no",
+        "ane": "yes" if str(row["ane"]).strip() == "1" else "no",
+    }
+    return {feat: raw_features[feat] for feat in FEATURES}
+
+
+def load_external_and_clinical_samples(project_dir: Path) -> list[dict[str, Any]]:
+    """
+    Nạp thêm các bộ mẫu kiểm định ngoại vi (UCI 857 - Enam Medical College, Bangladesh)
+    và các hồ sơ lâm sàng / ca cận biên phục vụ đối chứng thực tế trên Web.
+    """
+    samples: list[dict[str, Any]] = []
+
+    # 1. Mẫu bệnh nhân thực tế từ Bệnh viện Enam Medical College, Bangladesh (UCI ID 857)
+    uci857_path = project_dir / "data" / "external" / "uci_857_ckd_dataset_v2.csv"
+    if uci857_path.exists():
+        ext_df = pd.read_csv(uci857_path).iloc[2:].reset_index(drop=True)
+        selected_ext = [
+            (0, "EXT-BD-S1", "CKD giai đoạn S1 (eGFR ≥ 227,9; al = 1; hemo = 11,3–12,6)"),
+            (41, "EXT-BD-S3", "CKD giai đoạn S3 (eGFR 51,8–76,9; al ≥ 4; htn = yes; hemo = 10–11,3)"),
+            (17, "EXT-BD-S4", "CKD giai đoạn S4 (eGFR < 26,6; sc = 3,65–6,8; hemo = 11,3–12,6)"),
+            (23, "EXT-BD-S5", "CKD giai đoạn S5 cuối (sc = 16,25–19,4; hemo < 6,1; htn & dm = yes)"),
+            (5, "EXT-BD-OK1", "Người khỏe mạnh (Not CKD, S1; hemo ≥ 16,5; al = 0; sg ≥ 1,023)"),
+            (10, "EXT-BD-OK2", "Người khỏe mạnh (Not CKD, S2; hemo = 12,6–13,9; al = 0; sg ≥ 1,023)"),
+        ]
+        for row_idx, code, desc in selected_ext:
+            if row_idx >= len(ext_df):
+                continue
+            row = ext_df.iloc[row_idx]
+            feats = _uci857_row_to_features(row)
+            cls_val = normalize_class(row["class"])
+            samples.append({
+                "sample_code": code,
+                "group": "external_uci857",
+                "source_name": "Ngoại vi — BV Enam (Bangladesh, UCI #857)",
+                "actual_class": cls_val,
+                "actual_label": "Có bệnh (CKD)" if cls_val == 1 else "Không bệnh (Not CKD)",
+                "clinical_note": desc + " [quy đổi trung điểm khoảng UCI 857; bp=trống do nhị phân gốc]",
+                "missing_fields": sum(v is None for v in feats.values()),
+                "features": feats,
+            })
+
+    # 2. Ca cận biên thực tế & Hồ sơ lâm sàng chuẩn KDIGO
+    x_test_path = project_dir / "data" / "processed" / "X_test_raw.csv"
+    if x_test_path.exists():
+        x_test = pd.read_csv(x_test_path)
+        for pos, code, cls_val, desc in [
+            (
+                52,
+                "DEMO-BORDER-102",
+                1,
+                "Ca cận biên ID=102 (17 tuổi, CKD sớm chưa thiếu máu: hemo=13,9, al=0, sc=2,1). Demo gạt ngưỡng τ=0,50 → 0,25!",
+            ),
+            (
+                53,
+                "DEMO-MISSING-324",
+                0,
+                "Ca thiếu cụm huyết học ID=324 (bỏ trống hemo, pcv, wc, rc). Demo cảnh báo 'Đồng hóa về trung vị'!",
+            ),
+        ]:
+            if pos < len(x_test):
+                row = x_test.iloc[pos]
+                feats = {f: normalize_feature_value(f, row[f]) for f in FEATURES}
+                samples.append({
+                    "sample_code": code,
+                    "group": "clinical_stress",
+                    "source_name": "Tập Test thực tế — Ca phân tích lỗi Chương 4",
+                    "actual_class": cls_val,
+                    "actual_label": "Có bệnh (CKD)" if cls_val == 1 else "Không bệnh (Not CKD)",
+                    "clinical_note": desc,
+                    "missing_fields": sum(v is None for v in feats.values()),
+                    "features": feats,
+                })
+
+    clinical_vignettes = [
+        {
+            "sample_code": "KDIGO-G3B-A3",
+            "group": "clinical_stress",
+            "source_name": "Hồ sơ lâm sàng chuẩn KDIGO (Ngoài Dataset)",
+            "actual_class": 1,
+            "actual_label": "Có bệnh (CKD)",
+            "clinical_note": "Bệnh thận đái tháo đường giai đoạn G3b-A3 (61 tuổi, THA + ĐTĐ, sc=2,4, al=3, sg=1,010, hemo=10,2).",
+            "features": {
+                "age": 61.0, "bp": 95.0, "sg": "1.01", "al": "3", "su": "2",
+                "rbc": "normal", "pc": "abnormal", "pcc": "notpresent", "ba": "notpresent",
+                "bgr": 215.0, "bu": 64.0, "sc": 2.4, "sod": 134.0, "pot": 5.1,
+                "hemo": 10.2, "pcv": 31.0, "wc": 8900.0, "rc": 3.6,
+                "htn": "yes", "dm": "yes", "cad": "no", "appet": "poor", "pe": "yes", "ane": "yes",
+            },
+        },
+        {
+            "sample_code": "CLIN-GYM-OK",
+            "group": "clinical_stress",
+            "source_name": "Hồ sơ lâm sàng chuẩn KDIGO (Ngoài Dataset)",
+            "actual_class": 0,
+            "actual_label": "Không bệnh (Not CKD)",
+            "clinical_note": "Stress-test người khỏe tập thể hình (28 tuổi, sc=1,25 cận trên do khối cơ, nhưng hemo=15,8, al=0, sg=1,020).",
+            "features": {
+                "age": 28.0, "bp": 75.0, "sg": "1.02", "al": "0", "su": "0",
+                "rbc": "normal", "pc": "normal", "pcc": "notpresent", "ba": "notpresent",
+                "bgr": 88.0, "bu": 26.0, "sc": 1.25, "sod": 141.0, "pot": 4.2,
+                "hemo": 15.8, "pcv": 47.0, "wc": 6800.0, "rc": 5.3,
+                "htn": "no", "dm": "no", "cad": "no", "appet": "good", "pe": "no", "ane": "no",
+            },
+        },
+    ]
+    for item in clinical_vignettes:
+        item["missing_fields"] = 0
+        samples.append(item)
 
     return samples
